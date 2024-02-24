@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>View\Resources\Icons\AB_favicon-04.ico</ApplicationIcon>
+    <Platforms>AnyCPU;x86</Platforms>
+	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+	<Version>1.0</Version>
+	<Authors>(c) 118 / 75</Authors>
+	<Copyright>(с) 118 / 75</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="resorces\**" />
+    <EmbeddedResource Remove="resorces\**" />
+    <None Remove="resorces\**" />
+    <Page Remove="resorces\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="anydesk_icon.png" />
+    <None Remove="View\Resources\anydesk_icon.png" />
+    <None Remove="View\Resources\anydesk_icon_64.png" />
+    <None Remove="View\Resources\Background\mycat.jpg" />
+    <None Remove="View\Resources\Background\white.png" />
+    <None Remove="View\Resources\Icons\button_open.png" />
+    <None Remove="View\Resources\Icons\Close.png" />
+    <None Remove="View\Resources\Icons\nr256.png" />
+    <None Remove="View\Resources\Icons\nr512.png" />
+    <None Remove="View\Resources\Icons\Open.png" />
+    <None Remove="View\Resources\Icons\password.png" />
+    <None Remove="View\Resources\Icons\refresh.png" />
+    <None Remove="View\Resources\Icons\report.png" />
+    <None Remove="View\Resources\iikoChain_icon.ico" />
+    <None Remove="View\Resources\iikoOffice_icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="View\Resources\Icons\AB_favicon-04.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.1" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="View\Resources\Background\mycat.jpg" />
+    <Resource Include="View\Resources\Background\White.png" />
+    <Resource Include="View\Resources\Icons\anydesk_icon.png" />
+    <Resource Include="View\Resources\Icons\Close.png" />
+    <Resource Include="View\Resources\Icons\iikoChain_icon.ico" />
+    <Resource Include="View\Resources\Icons\iikoOffice_icon.ico" />
+    <Resource Include="View\Resources\Icons\Open.png" />
+    <Resource Include="View\Resources\Icons\password.png" />
+    <Resource Include="View\Resources\Icons\refresh.png" />
+    <Resource Include="View\Resources\Icons\report.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

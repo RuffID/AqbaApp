@@ -1,0 +1,26 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:namespace="clr-namespace:AqbaApp">
+
+    <Style TargetType="{x:Type TextBox}"
+           x:Key="EclipceTextBoxTheme">
+        <Style.Setters>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" CornerRadius="5" Margin="5"
+                                BorderBrush="#1D3D55" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="#FCFCFF" 
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontFamily" Value="Roboto"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style.Setters>
+    </Style>
+</ResourceDictionary>

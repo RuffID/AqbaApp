@@ -1,0 +1,31 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:namespace="clr-namespace:AqbaApp">
+
+    <Style TargetType="{x:Type Button}"
+           x:Key="EclipceButtonTheme"
+           BasedOn="{StaticResource {x:Type Button}}">
+        <Style.Setters>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" CornerRadius="10" Margin="5"
+                            Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#6C90AA" TargetName="Border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="Roboto"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style.Setters>
+    </Style>
+</ResourceDictionary>
