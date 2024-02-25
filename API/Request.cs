@@ -255,6 +255,12 @@ namespace AqbaApp.API
 
         public static async Task GetEmployeePerformance(List<Employee> employees, DateTime dateFrom, DateTime dateTo, string requestType)
         {
+            foreach (var emp in employees)
+            {
+                emp.SolvedTasks = 0;
+                emp.SpentedTimeDouble = 0;
+            }
+
             EmployeePerformance[] employeePerformanceList;
 
             var response = await GetResponse(
@@ -268,15 +274,15 @@ namespace AqbaApp.API
 
                     foreach (var emp in employeePerformanceList)
                     {
-                        var e = employees.Find(e => e.Id == emp.Id);
-                        int index = employees.IndexOf(e);
-                        employees[index].SolvedTasks = emp.SolvedTasks;
+                        var e = employees.Find(e => e.Id == emp.Id);    // Поиск сотрудника по id из общего списка который был загружен ранее
+                        int index = employees.IndexOf(e);   // Получение id сотрудника
+                        employees[index].SolvedTasks = emp.SolvedTasks; // Назначает решённые задачи и списанное время по id
                         employees[index].SpentedTimeDouble = emp.SpentedTime;
                     }
                 }
                 catch (Exception e)
                 {
-                    WriteLog.Error($"{e}");
+                    WriteLog.Error(e.ToString());
                 }
             }
         }

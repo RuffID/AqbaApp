@@ -206,24 +206,8 @@ namespace AqbaApp.ViewModel
         {
             get
             {
-                return reportPageLoaded ??= new RelayCommand(async (o) =>
-                {
-                    if (Employees?.Count <= 0)
-                    {
-                        var employees = await Request.GetEmployees();
-                        if (employees == null || employees.Count == 0)
-                            return;
-
-                        Employees = employees.ToList();
-                    }
-
-                    if (Groups.Count == 0)
-                    {
-                        await Request.GetGroups(Groups);
-                        if (CheckedGroups != null && CheckedGroups.Count == 0)
-                            SaveCheckedGroups();
-                        else LoadCheckedGroups();
-                    }
+                return reportPageLoaded ??= new RelayCommand((o) =>
+                {                    
 
                     /*if (TaskStatuses.Count == 0)
                     {
@@ -410,7 +394,6 @@ namespace AqbaApp.ViewModel
         async Task GetPerformance(string requestType = "auto")
         {            
             GettingTaskInRun = false;
-            Employees?.Clear();
             timer.Stop();
             if (Config.Settings.ElectronicQueueMode)
             {
