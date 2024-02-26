@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using AqbaApp.Model.OkdeskEntities;
 using AqbaApp.API;
+using System;
 
 namespace AqbaApp.ViewModel
 {
@@ -192,7 +193,6 @@ namespace AqbaApp.ViewModel
 
                     if (selectedClient is Company currClient)
                     {
-                        Equipments?.Clear();
                         CurrentEquipment = null;
 
                         FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(obj => obj.Company_Id == currClient.Id));
@@ -211,7 +211,7 @@ namespace AqbaApp.ViewModel
                 return selectedObject ??= new RelayCommand(async (selectedObject) =>
                 {
                     if (selectedObject is MaintenanceEntity currObject)
-                    {                        
+                    {          
                         CurrentEquipment = null;
 
                         await Request.GetEquipmentsByMaintenanceEntity(Equipments, currObject.Id);                        
@@ -319,7 +319,7 @@ namespace AqbaApp.ViewModel
                         if (updatedEquipment != null)
                         {
                             CurrentEquipment = updatedEquipment;
-                            var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).First();                            
+                            var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();                            
                             if (equip != null)
                             {
                                 int index = Equipments.IndexOf(equip);
@@ -424,11 +424,18 @@ namespace AqbaApp.ViewModel
                 {
                     if (CurrentEquipment != null)
                     {
-                        string serverInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "0017").Value.Replace(" ", ""); // 0017 код атрибута iikoChain
-                        string loginInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "0008").Value.Replace(" ", "");
-                        string[] addressAndPort = serverInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string[] loginAndPassword = loginInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        StartIIKO(loginAndPassword, addressAndPort);
+                        try
+                        {
+                            string serverInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "srv_addr").Value.Replace(" ", ""); // 0017 код атрибута iikoChain
+                            string loginInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "0008").Value.Replace(" ", "");
+                            string[] addressAndPort = serverInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                            string[] loginAndPassword = loginInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                            StartIIKO(loginAndPassword, addressAndPort);
+                        }
+                        catch (Exception e)
+                        {
+                            WriteLog.Error(e.ToString());
+                        }
                     }
                 });
             }

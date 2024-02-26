@@ -23,152 +23,157 @@
 
 
     <Border BorderThickness="1" Margin="2" BorderBrush="#1D3D55">
-    <Grid Background="#E8EBE4">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.7*" MinWidth="100"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="0.4*" MinWidth="100"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="0.5*" MinWidth="100"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="0.4*" MinWidth="100"/>
-        </Grid.ColumnDefinitions>
-        
-        <Grid.RowDefinitions>
-            <RowDefinition Height="0.10*"></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition Height="0.08*"></RowDefinition>
-        </Grid.RowDefinitions>
+        <Grid Background="#E8EBE4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.7*" MinWidth="100"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="0.4*" MinWidth="100"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="0.5*" MinWidth="100"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="0.4*" MinWidth="100"/>
+            </Grid.ColumnDefinitions>
 
-        <Button Grid.Column="0" Grid.Row="2" Content="Загрузить клиентов" Background="#1D3D55" VerticalAlignment="Stretch" Command="{Binding GetClients}" Style="{StaticResource EclipceButtonTheme}"/>
-
-        <TextBox x:Name="ClientSearch" Grid.Column="0" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">            
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="TextChanged">
-                    <i:InvokeCommandAction Command="{Binding ClientSearch}"
-                                   CommandParameter="{Binding ElementName=ClientSearch,Path=Text}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </TextBox>
-        <TextBox x:Name="ObjectSearch" Grid.Column="2" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="TextChanged">
-                    <i:InvokeCommandAction Command="{Binding ObjectSearch}"
-                                   CommandParameter="{Binding ElementName=ObjectSearch,Path=Text}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </TextBox>
-
-        <Grid Grid.Column="0" Grid.Row="1" x:Name="CompanyList" Background="#FCFCFF">
             <Grid.RowDefinitions>
-                <RowDefinition Height="0.05*"/>
-                <RowDefinition/>
+                <RowDefinition Height="0.10*"></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition Height="0.08*"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="{Binding CompanyResults}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Button Grid.Column="0" Grid.Row="2" Content="Загрузить клиентов" Background="#1D3D55" VerticalAlignment="Stretch" Command="{Binding GetClients}" Style="{StaticResource EclipceButtonTheme}"/>
 
-            <ListBox Grid.Row="1"  x:Name="ClientList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfCompanies}" Background="#FCFCFF" BorderThickness="0">
+            <TextBox x:Name="ClientSearch" Grid.Column="0" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">
                 <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="SelectionChanged">
-                        <i:InvokeCommandAction Command="{Binding SelectedClient}"
-                                   CommandParameter="{Binding ElementName=ClientList,Path=SelectedItem}"/>
+                    <i:EventTrigger EventName="TextChanged">
+                        <i:InvokeCommandAction Command="{Binding ClientSearch}"
+                                   CommandParameter="{Binding ElementName=ClientSearch,Path=Text}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock>
+            </TextBox>
+            <TextBox x:Name="ObjectSearch" Grid.Column="2" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="TextChanged">
+                        <i:InvokeCommandAction Command="{Binding ObjectSearch}"
+                                   CommandParameter="{Binding ElementName=ObjectSearch,Path=Text}"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </TextBox>
+
+            <Grid Grid.Column="0" Grid.Row="1" x:Name="CompanyList" Background="#FCFCFF">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0.05*"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="{Binding CompanyResults}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <ListBox Grid.Row="1"  x:Name="ClientList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfCompanies}" Background="#FCFCFF" BorderThickness="0">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding SelectedClient}"
+                                   CommandParameter="{Binding ElementName=ClientList,Path=SelectedItem}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
                             <Run FontSize="10" Foreground="{Binding Category.Color}" FontWeight="Bold">⚫ </Run>
                             <Run Text="{Binding Name}"/>
-                        </TextBlock>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Grid>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Обновить"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+            </Grid>
 
-        <GridSplitter Grid.Column="1" Grid.Row="1" ShowsPreview="False" Width="3"
+            <GridSplitter Grid.Column="1" Grid.Row="1" ShowsPreview="False" Width="3"
         HorizontalAlignment="Center" VerticalAlignment="Stretch" />
 
-        <GridSplitter Grid.Column="3" Grid.Row="1" ShowsPreview="False" Width="3"
+            <GridSplitter Grid.Column="3" Grid.Row="1" ShowsPreview="False" Width="3"
         HorizontalAlignment="Center" VerticalAlignment="Stretch" />
 
-        <GridSplitter Grid.Column="5" Grid.Row="1" ShowsPreview="False" Width="3"
+            <GridSplitter Grid.Column="5" Grid.Row="1" ShowsPreview="False" Width="3"
         HorizontalAlignment="Center" VerticalAlignment="Stretch" />
 
-        <Grid Grid.Column="2" Grid.Row="1" Background="#FCFCFF">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="0.04*"/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-            <TextBlock Text="{Binding MaintenanceEntitiesResults}" FontSize="12" HorizontalAlignment="Center"  VerticalAlignment="Center"/>
-            <ListBox Grid.Row="1" x:Name="ObjectList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfMaintenanceEntities}" Background="#FCFCFF" BorderThickness="0">
+            <Grid Grid.Column="2" Grid.Row="1" Background="#FCFCFF">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0.04*"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="{Binding MaintenanceEntitiesResults}" FontSize="12" HorizontalAlignment="Center"  VerticalAlignment="Center"/>
+                <ListBox Grid.Row="1" x:Name="ObjectList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfMaintenanceEntities}" Background="#FCFCFF" BorderThickness="0">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding SelectedObject}"
+                                   CommandParameter="{Binding ElementName=ObjectList,Path=SelectedItem}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <ListBox Grid.Column="4" Grid.Row="1" x:Name="EquipmentList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Equipments}" Background="#FCFCFF" BorderThickness="0">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="SelectionChanged">
-                        <i:InvokeCommandAction Command="{Binding SelectedObject}"
-                                   CommandParameter="{Binding ElementName=ObjectList,Path=SelectedItem}"/>
+                        <i:InvokeCommandAction Command="{Binding SelectedEquipment}"
+                                   CommandParameter="{Binding ElementName=EquipmentList,Path=SelectedItem}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Name}"/>
+                        <TextBlock Text="{Binding FullName}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </Grid>
 
-        <ListBox Grid.Column="4" Grid.Row="1" x:Name="EquipmentList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Equipments}" Background="#FCFCFF" BorderThickness="0">
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding SelectedEquipment}"
-                                   CommandParameter="{Binding ElementName=EquipmentList,Path=SelectedItem}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding FullName}"/>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-
-        <ListBox Grid.Column="6" Grid.Row="1" x:Name="EquipmentParameter" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding CurrentEquipment.Parameters}" Background="#FCFCFF" BorderThickness="0">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Grid.Column="1" Margin="5">
-                        <TextBlock Text="{Binding Name}" HorizontalAlignment="Left"/>
-                        <TextBox Text="{Binding Value}" BorderThickness="0" 
+            <ListBox Grid.Column="6" Grid.Row="1" x:Name="EquipmentParameter" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding CurrentEquipment.Parameters}" Background="#FCFCFF" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Grid.Column="1" Margin="5">
+                            <TextBlock Text="{Binding Name}" HorizontalAlignment="Left"/>
+                            <TextBox Text="{Binding Value}" BorderThickness="0" 
                                  Background="Transparent"
                                  HorizontalContentAlignment="Stretch" 
                                  TextAlignment="Left"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
-        <StackPanel Grid.Column="6" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Height="40">
-            <Button x:Name="anydeskLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding AnydeskBtnVisibility}">
-                <Image Source="Resources/Icons/anydesk_icon.png"/>
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Click">
-                        <i:InvokeCommandAction Command="{Binding OpenAnydesk}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </Button>
-            <Button x:Name="iikoOfficeLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding IIKOOfficeBtnVisibility}">
-                <Image Source="Resources/Icons/iikoOffice_icon.ico"/>
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Click">
-                        <i:InvokeCommandAction Command="{Binding OpenIIKO}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </Button>
-            <Button x:Name="iikoChainLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding IIKOChainBtnVisibility}">
-                <Image Source="Resources/Icons/iikoChain_icon.ico"/>
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Click">
-                        <i:InvokeCommandAction Command="{Binding OpenChain}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </Button>
-        </StackPanel>
-    </Grid>
+            <StackPanel Grid.Column="6" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Height="40">
+                <Button x:Name="anydeskLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding AnydeskBtnVisibility}">
+                    <Image Source="Resources/Icons/anydesk_icon.png"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenAnydesk}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                <Button x:Name="iikoOfficeLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding IIKOOfficeBtnVisibility}">
+                    <Image Source="Resources/Icons/iikoOffice_icon.ico"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenIIKO}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                <Button x:Name="iikoChainLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding IIKOChainBtnVisibility}">
+                    <Image Source="Resources/Icons/iikoChain_icon.ico"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenChain}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+            </StackPanel>
+        </Grid>
     </Border>
 </Page>
