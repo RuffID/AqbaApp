@@ -39,6 +39,8 @@ namespace AqbaApp.ViewModel
         ObservableCollection<MaintenanceEntity> filteredListOfMaintenanceEntities;
         ObservableCollection<MaintenanceEntity> tempListOfMaintenanceEntities;
         ObservableCollection<Equipment> equipment;
+        Company currentCompany;
+        MaintenanceEntity currentMaintenanceEntity;
         Equipment currentEquipment;
         RelayCommand getClients;
         RelayCommand selectedClient;
@@ -50,6 +52,9 @@ namespace AqbaApp.ViewModel
         RelayCommand openAnydesk;
         RelayCommand openOffice;
         RelayCommand openChain;
+        RelayCommand updateEquipment;
+        RelayCommand updateCompany;
+        RelayCommand updateMaintenanceEntity;
 
         #endregion
 
@@ -89,6 +94,26 @@ namespace AqbaApp.ViewModel
         {
             get { return equipment; }
             set { equipment = value; OnPropertyChanged(nameof(Equipments)); }
+        }
+
+        public Company CurrentCompany
+        {
+            get { return currentCompany; }
+            set
+            {
+                currentCompany = value;
+                OnPropertyChanged(nameof(CurrentCompany));
+            }
+        }
+
+        public MaintenanceEntity CurrentMaintenanceEntity
+        {
+            get { return currentMaintenanceEntity; }
+            set
+            {
+                currentMaintenanceEntity = value;
+                OnPropertyChanged(nameof(CurrentMaintenanceEntity));
+            }
         }
 
         public Equipment CurrentEquipment
@@ -172,13 +197,13 @@ namespace AqbaApp.ViewModel
                         await Request.GetCompanies(Companies, Categories);
 
                         FilteredListOfCompanies = new ObservableCollection<Company>(Companies);
-                        tempListOfCompanies = new ObservableCollection<Company>();
+                        tempListOfCompanies = [];
                         CompanyResults = $"Загружено {Companies.Count} компаний";
 
                         await Request.GetMaintenanceEntities(Objects);
 
                         FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects);
-                        tempListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>();
+                        tempListOfMaintenanceEntities = [];
                         MaintenanceEntitiesResults = $"Загружено {Objects.Count} объектов";
                     });
             }
@@ -194,6 +219,8 @@ namespace AqbaApp.ViewModel
                     if (selectedClient is Company currClient)
                     {
                         CurrentEquipment = null;
+                        CurrentMaintenanceEntity = null;
+                        CurrentCompany = currClient;
 
                         FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(obj => obj.Company_Id == currClient.Id));
 
@@ -213,6 +240,7 @@ namespace AqbaApp.ViewModel
                     if (selectedObject is MaintenanceEntity currObject)
                     {          
                         CurrentEquipment = null;
+                        CurrentMaintenanceEntity = currObject;
 
                         await Request.GetEquipmentsByMaintenanceEntity(Equipments, currObject.Id);                        
                     }
@@ -233,9 +261,9 @@ namespace AqbaApp.ViewModel
 
                         // Поиск и заполнение списка компаний по поисковой строке
                         if (searchMaintenanceEntitiesString != "")
-                            FilteredListOfCompanies = new ObservableCollection<Company>(tempListOfCompanies.Where(comp => comp.Name.ToLower().Contains(searchCompanyString)));
+                            FilteredListOfCompanies = new ObservableCollection<Company>(tempListOfCompanies.Where(comp => comp.Name.Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase)));
                         else
-                            FilteredListOfCompanies = new ObservableCollection<Company>(Companies.Where(comp => comp.Name.ToLower().Contains(searchCompanyString)));
+                            FilteredListOfCompanies = new ObservableCollection<Company>(Companies.Where(comp => comp.Name.Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase)));
 
                         FilteredListOfMaintenanceEntities?.Clear();
                         tempListOfMaintenanceEntities?.Clear();
@@ -245,7 +273,7 @@ namespace AqbaApp.ViewModel
                             for (int i = 0; i < Objects.Count; i++)
                             {
                                 if (item.Id == Objects[i].Company_Id)
-                                    if (Objects[i].Name.Trim().ToLower().Contains(searchMaintenanceEntitiesString))
+                                    if (Objects[i].Name.Trim().Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase))
                                     {
                                         FilteredListOfMaintenanceEntities.Add(Objects[i]);
                                         tempListOfMaintenanceEntities.Add(Objects[i]);
@@ -275,9 +303,9 @@ namespace AqbaApp.ViewModel
 
                         // Поиск и заполнение списка объектов по поисковой строке
                         if (searchCompanyString != "")
-                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(tempListOfMaintenanceEntities.Where(cl => cl.Name.ToLower().Contains(searchMaintenanceEntitiesString)));
+                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(tempListOfMaintenanceEntities.Where(cl => cl.Name.Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase)));
                         else
-                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(cl => cl.Name.ToLower().Contains(searchMaintenanceEntitiesString)));
+                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(cl => cl.Name.Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase)));
 
                         FilteredListOfCompanies.Clear();
                         tempListOfCompanies.Clear();
@@ -287,7 +315,7 @@ namespace AqbaApp.ViewModel
                             for (int i = 0; i < Companies.Count; i++)
                             {
                                 if (Companies[i].Id == item.Company_Id && !FilteredListOfCompanies.Contains(Companies[i]))
-                                    if (Companies[i].Name.Trim().ToLower().Contains(searchCompanyString))
+                                    if (Companies[i].Name.Trim().Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase))
                                     {
                                         FilteredListOfCompanies.Add(Companies[i]);
                                         tempListOfCompanies.Add(Companies[i]);
@@ -308,18 +336,46 @@ namespace AqbaApp.ViewModel
         {
             get
             {
-                return selectedEquipment ??= new RelayCommand(async(selectedEquipment) =>
+                return selectedEquipment ??= new RelayCommand((selectedEquipment) =>
                 {
                     if (selectedEquipment is Equipment equipment)
                     {
                         CurrentEquipment = equipment;
                         HideIcons();
-                        Equipment updatedEquipment = await Request.GetEquipment(equipment.Id);
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
+                            AnydeskBtnVisibility = "Visible";
+                        else AnydeskBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
+                        CurrentEquipment.Equipment_kind?.Code != "0010")
+                            IIKOOfficeBtnVisibility = "Visible";
+                        else IIKOOfficeBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
+                        CurrentEquipment.Equipment_kind?.Code == "0010")
+                            IIKOChainBtnVisibility = "Visible";
+                        else IIKOChainBtnVisibility = "Collapsed";
+                    }
+                });
+            }
+        }
+
+        public RelayCommand UpdateEquipment
+        {
+            get
+            {
+                return updateEquipment ??= new RelayCommand( async (o) =>
+                {
+                    if (CurrentEquipment != null)
+                    {
+                        HideIcons();
+                        Equipment updatedEquipment = await Request.GetEquipment(CurrentEquipment.Id);
 
                         if (updatedEquipment != null)
                         {
                             CurrentEquipment = updatedEquipment;
-                            var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();                            
+                            var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();
                             if (equip != null)
                             {
                                 int index = Equipments.IndexOf(equip);
@@ -435,6 +491,60 @@ namespace AqbaApp.ViewModel
                         catch (Exception e)
                         {
                             WriteLog.Error(e.ToString());
+                        }
+                    }
+                });
+            }
+        }
+
+        public RelayCommand UpdateCompany
+        {
+            get
+            {
+                return updateCompany ??= new RelayCommand(async(o) =>
+                {
+                    if (CurrentCompany != null)
+                    {
+                        Company updatedCompany = await Request.GetCompany(CurrentCompany.Id);
+
+                        if (updatedCompany != null)
+                        {
+                            CurrentCompany = updatedCompany;
+
+                            var comp = Companies.Where(e => e.Id == updatedCompany.Id).FirstOrDefault();
+                            if (comp != null)
+                            {
+                                int index = Companies.IndexOf(comp);
+                                if (index >= 0)
+                                    Companies[index].Replace(updatedCompany);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        public RelayCommand UpdateMaintenanceEntity
+        {
+            get
+            {
+                return updateMaintenanceEntity ??= new RelayCommand(async (o) =>
+                {
+                    if (CurrentMaintenanceEntity != null)
+                    {
+                        MaintenanceEntity updatedME = await Request.GetMaintenanceEntity(CurrentMaintenanceEntity.Id);
+
+                        if (updatedME != null)
+                        {
+                            CurrentMaintenanceEntity = updatedME;
+
+                            var me = Objects.Where(e => e.Id == updatedME.Id).FirstOrDefault();
+                            if (me != null)
+                            {
+                                int index = Objects.IndexOf(me);
+                                if (index >= 0)
+                                    Objects[index].Replace(updatedME);
+                            }
                         }
                     }
                 });

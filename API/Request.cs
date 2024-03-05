@@ -74,6 +74,44 @@ namespace AqbaApp.API
             }
         }
 
+        public static async Task<Company> GetCompany(int companyId)
+        {
+            var response = await GetResponse($"{serverAddress}/company?companyId={companyId}");
+
+            if (!string.IsNullOrEmpty(response) && response != "[]")
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<Company>(response);
+                }
+                catch (Exception e)
+                {
+                    WriteLog.Error($"{e}");
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        public static async Task<MaintenanceEntity> GetMaintenanceEntity(int maintenanceEntityId)
+        {
+            var response = await GetResponse($"{serverAddress}/maintenanceEntity?maintenanceEntityId={maintenanceEntityId}");
+
+            if (!string.IsNullOrEmpty(response) && response != "[]")
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<MaintenanceEntity>(response);
+                }
+                catch (Exception e)
+                {
+                    WriteLog.Error($"{e}");
+                    return null;
+                }
+            }
+            return null;
+        }
+
         public static async Task GetMaintenanceEntities(ObservableCollection<MaintenanceEntity> objects)
         {
             objects.Clear();
@@ -82,7 +120,7 @@ namespace AqbaApp.API
 
             while (true)
             {
-                var response = await GetResponse($"{serverAddress}/MaintenanceEntity?maintenanceEntityId={lastObjectId}");
+                var response = await GetResponse($"{serverAddress}/maintenanceEntity/list?maintenanceEntityId={lastObjectId}");
 
                 if (!string.IsNullOrEmpty(response) && response != "[]")
                 {

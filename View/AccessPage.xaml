@@ -61,7 +61,7 @@
 
             <Grid Grid.Column="0" Grid.Row="1" x:Name="CompanyList" Background="#FCFCFF">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="0.05*"/>
+                    <RowDefinition Height="20"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
@@ -84,7 +84,7 @@
                     </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Обновить"/>
+                            <MenuItem Header="Обновить" Command="{Binding UpdateCompany}"/>
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
@@ -101,7 +101,7 @@
 
             <Grid Grid.Column="2" Grid.Row="1" Background="#FCFCFF">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="0.04*"/>
+                    <RowDefinition Height="20"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock Text="{Binding MaintenanceEntitiesResults}" FontSize="12" HorizontalAlignment="Center"  VerticalAlignment="Center"/>
@@ -112,6 +112,11 @@
                                    CommandParameter="{Binding ElementName=ObjectList,Path=SelectedItem}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Обновить" Command="{Binding UpdateMaintenanceEntity}"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Name}"/>
@@ -127,6 +132,11 @@
                                    CommandParameter="{Binding ElementName=EquipmentList,Path=SelectedItem}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Обновить" Command="{Binding UpdateEquipment}"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding FullName}"/>

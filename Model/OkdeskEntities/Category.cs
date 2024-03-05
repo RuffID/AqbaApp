@@ -1,10 +1,13 @@
 ﻿namespace AqbaApp.Model.OkdeskEntities
 {
-    public class Category
+    public class Category : ViewModelBase
     {
-        public int Id { get; set; }
+        int id;
+        string color;
 
-        public string Color { get; set; }
+        public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
+
+        public string Color { get { return color; } set { color = value; OnPropertyChanged(nameof(Color)); } }
 
         public Category() { }
 
