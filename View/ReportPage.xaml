@@ -29,59 +29,68 @@
     </i:Interaction.Triggers>
 
     <Border BorderBrush="#1D3D55" BorderThickness="1" Margin="2">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        <Grid.Background>
-            <ImageBrush ImageSource="{Binding PathToBackground}"/>            
-        </Grid.Background>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.Background>
+                <ImageBrush ImageSource="{Binding PathToBackground}"/>
+            </Grid.Background>
 
-        <Grid Grid.Column="0">
-            
-            <ListView x:Name="openTaskList" ItemsSource="{Binding ActiveEmployees}" BorderThickness="0" Background="Transparent" Margin="5,5,5,5" SizeChanged="OpenTaskList_SizeChanged">                
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="FontFamily" Value="Roboto"/>
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.View>
-                    <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderTheme}">
-                        <GridViewColumn Header="ФИО инженера">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding FullName}"
+            <Grid Grid.Column="0">
+
+                <ListView x:Name="openTaskList" ItemsSource="{Binding ActiveEmployees}" BorderThickness="0" Background="Transparent" Margin="5,5,5,5" SizeChanged="OpenTaskList_SizeChanged">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="FontFamily" Value="Roboto"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.View>
+                        <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderTheme}">
+                            <GridViewColumn Header="ФИО инженера">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding FullName}"
                                                Foreground="{Binding DataContext.FullNameBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}" 
                                                FontSize="{Binding Path=FullNameFontSize, Source={x:Static namespace:Config.Settings}}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="Решённые">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SolvedTasks}" 
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Решённые">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SolvedTasks}" 
                                                Foreground="{Binding DataContext.SolvedTasksBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                FontSize="{Binding Path=SolvedTasksFontSize, Source={x:Static namespace:Config.Settings}}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="Списанное время">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SpentedTime}" 
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Текущие">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding OpenTasks}" 
+                                               Foreground="{Binding DataContext.OpenTasksBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                               FontSize="{Binding Path=OpenTasksFontSize, Source={x:Static namespace:Config.Settings}}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Списанное время">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SpentedTime}" 
                                                Foreground="{Binding DataContext.SpendedTimeBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                FontSize="{Binding Path=SpendedTimeFontSize, Source={x:Static namespace:Config.Settings}}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            
-        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
 
-        
+            </Grid>
+
+
             <Grid Grid.Column="1" Grid.Row="0"  HorizontalAlignment="Right">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40"/>
@@ -90,10 +99,16 @@
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="33"/>
                     <RowDefinition Height="33"/>
                 </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="145"/>
+                    <ColumnDefinition Width="148"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -101,7 +116,7 @@
                         <Setter Property="Width" Value="0"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Path=IsChecked, ElementName=OpenCloseSlideMenuBtn}" Value="true">
-                                <Setter Property="Width" Value="250"/>
+                                <Setter Property="Width" Value="650"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -118,7 +133,7 @@
                     </i:Interaction.Triggers>
                 </Button>
 
-                <ListView Grid.Row="1" ItemsSource="{Binding Groups}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Grid.RowSpan="3" Background="Transparent" Margin="5">
+                <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Background="Transparent" Margin="5">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
@@ -128,137 +143,178 @@
                     </ListView.ItemTemplate>
                 </ListView>
 
-                <Grid Grid.Row="2">
+                <Button Grid.Column="1" Grid.Row="0" Content="Приоритеты" IsEnabled="{Binding GettingTaskInRun}" Style="{StaticResource EclipceButtonTheme}"  Background="#1D3D55"  BorderBrush="Transparent" Height="35" VerticalContentAlignment="Center">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding LeftClickPrioritySelectButton}"/>
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="MouseRightButtonDown">
+                            <i:InvokeCommandAction Command="{Binding RightClickPrioritySelectButton}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <ListBox Grid.Column="1" Grid.Row="1" ItemsSource="{Binding Priorities}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="0" Background="Transparent" Margin="5">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, NotifyOnTargetUpdated=True}" Command="{Binding Path=DataContext.CheckedOpenTasks, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Button Grid.Column="2" Grid.Row="0" Content="Статусы" IsEnabled="{Binding GettingTaskInRun}" Style="{StaticResource EclipceButtonTheme}"  Background="#1D3D55"  BorderBrush="Transparent" Height="35" VerticalContentAlignment="Center">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding LeftClickStatusSelectButton}"/>
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="MouseRightButtonDown">
+                            <i:InvokeCommandAction Command="{Binding RightClickStatusSelectButton}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <ListBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding TaskStatuses}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="0" Background="Transparent" Margin="5">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, NotifyOnTargetUpdated=True}" Command="{Binding Path=DataContext.CheckedOpenTasks, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Button Grid.Column="3" Grid.Row="0" Content="Типы" IsEnabled="{Binding GettingTaskInRun}" Style="{StaticResource EclipceButtonTheme}"  Background="#1D3D55"  BorderBrush="Transparent" Height="35" VerticalContentAlignment="Center">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding LeftClickTypeSelectButton}"/>
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="MouseRightButtonDown">
+                            <i:InvokeCommandAction Command="{Binding RightClickTypeSelectButton}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+
+                <ListBox Grid.Column="3" Grid.Row="1" ItemsSource="{Binding TaskTypes}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="0"  Background="Transparent" Margin="5">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, NotifyOnTargetUpdated=True}" Command="{Binding Path=DataContext.CheckedOpenTasks, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Grid Grid.Column="2" Grid.Row="6">
                     <CheckBox Content="Режим ЭО" FontSize="14" FontFamily="Roboto" IsChecked="{Binding Path=ElectronicQueueMode, Source={x:Static namespace:Config.Settings}}" VerticalAlignment="Center"/>
                 </Grid>
 
-                <Grid Grid.Row="3">
+                <Border Grid.Row="2" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                    <TextBlock Text="Цвет заголовков:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                </Border>
+
+                <Grid Grid.Column="1" Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
-                        <TextBlock Text="{Binding HeaderBackgroundColor, StringFormat= 'Цвет заголовков: \{0}\ '}" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding HeaderBackgroundColor}" TextAlignment="Center" Margin="5"/>
                     </Border>
-                    <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding HeaderBackgroundColor}"/>
+                    <xctk:ColorPicker Grid.Column="1" BorderThickness="0" Width="20" SelectedColor="{Binding HeaderBackgroundColor}"/>
                 </Grid>
 
-                <Grid Grid.Row="4">
+                <Border Grid.Row="3" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                    <TextBlock Text="ФИО сотрудника:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                </Border>
+
+                <Grid Grid.Column="1" Grid.Row="3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
-                        <TextBlock Text="{Binding FullNameBackgroundColor, StringFormat= 'ФИО: \{0}\ '}" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding FullNameBackgroundColor}" TextAlignment="Center"  Margin="5"/>
                     </Border>
                     <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding FullNameBackgroundColor}"/>
                 </Grid>
 
-                <Grid Grid.Row="5">
+                <Border Grid.Row="4" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                    <TextBlock Text="Текущие заявки:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                </Border>
+
+                <Grid Grid.Column="1" Grid.Row="4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
-                        <TextBlock Text="{Binding SolvedTasksBackgroundColor, StringFormat= 'Решённые: \{0}\ '}" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding OpenTasksBackgroundColor}" TextAlignment="Center" Margin="5"/>
+                    </Border>
+                    <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding OpenTasksBackgroundColor}"/>
+                </Grid>
+
+                <Border Grid.Row="5" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                    <TextBlock Text="Решённые заявки:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                </Border>
+
+                <Grid Grid.Column="1" Grid.Row="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding SolvedTasksBackgroundColor}" TextAlignment="Center" Margin="5"/>
                     </Border>
                     <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding SolvedTasksBackgroundColor}"/>
                 </Grid>
 
-                <Grid Grid.Row="6">
+                <Border Grid.Row="6" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                    <TextBlock Text="Списанное время:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                </Border>
+
+                <Grid Grid.Row="6" Grid.Column="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
-                        <TextBlock Text="{Binding SpendedTimeBackgroundColor, StringFormat= 'Списанное: \{0}\ '}" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                    <Border BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding SpendedTimeBackgroundColor}" TextAlignment="Center" Margin="5"/>
                     </Border>
                     <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding SpendedTimeBackgroundColor}"/>
                 </Grid>
 
-                <Button Content="Изменить фон" Grid.Row="7" Click="SaveBackgroundPath_OnClick" Margin="5" Background="#1D3D55" Height="35" VerticalContentAlignment="Center" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}"/>
+                <Button Content="Изменить фон" Grid.Column="2" Grid.Row="8" Click="SaveBackgroundPath_OnClick" Margin="0" Background="#1D3D55" Height="35" VerticalContentAlignment="Center" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}"/>
 
-                <Grid Grid.Row="8" Background="Transparent" Margin="5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
+                <DatePicker Grid.Row="8" Grid.Column="0" x:Name="DatePickerFrom" SelectedDateFormat="Short" SelectedDate="{Binding SelectedDateFrom}" DisplayDateEnd="{Binding SelectedDateTo}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Background="Transparent" FontSize="14" FontFamily="Roboto" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <DatePicker Grid.Row="8" Grid.Column="1" x:Name="DatePickerTo" SelectedDateFormat="Short" SelectedDate="{Binding SelectedDateTo}" DisplayDateStart="{Binding SelectedDateFrom}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Background="Transparent" FontSize="14" FontFamily="Roboto" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                    <DatePicker Grid.Column="0" x:Name="DatePickerFrom" SelectedDateFormat="Short" SelectedDate="{Binding SelectedDateFrom}" DisplayDateEnd="{Binding SelectedDateTo}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Background="Transparent" FontSize="14" FontFamily="Roboto"/>
-                    <DatePicker Grid.Column="1" x:Name="DatePickerTo" SelectedDateFormat="Short" SelectedDate="{Binding SelectedDateTo}" DisplayDateStart="{Binding SelectedDateFrom}" IsEnabled="{Binding GettingTaskInRun}" BorderThickness="0" Background="Transparent" FontSize="14" FontFamily="Roboto"/>
-                </Grid>
             </Grid>
-        
 
-
-        <Button Command="{Binding GetOpenTasks}" IsEnabled="{Binding GettingTaskInRun}" Width="50" Height="50" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,65,5" Background="Transparent" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}">
-            <Image Source="Resources/Icons/refresh.png" Stretch="Uniform"/>
-        </Button>
-        
-        <ToggleButton x:Name="OpenCloseSlideMenuBtn" Height="40" Width="40" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,20,10">
-            <ToggleButton.Template>
-                <ControlTemplate>
-                    <Image>
-                        <Image.Style>
-                            <Style TargetType="Image">
-                                <Setter Property="Source" Value="Resources/Icons/Open.png"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ToggleButton}}, Path=IsChecked}" Value="false">
-                                        <Setter Property="Source" Value="Resources/Icons/Close.png"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Image.Style>
-                    </Image>
-                </ControlTemplate>
-            </ToggleButton.Template>
-        </ToggleButton>
-    </Grid>
+            <Button Command="{Binding GetOpenTasks}" IsEnabled="{Binding GettingTaskInRun}" Width="50" Height="50" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,65,5" Background="Transparent" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}">
+                <Image Source="Resources/Icons/refresh.png" Stretch="Uniform"/>
+            </Button>
+            <TextBlock Text="{Binding LastUpdateTime}" Foreground="Black" FontSize="18"  VerticalAlignment="Bottom" HorizontalAlignment="Right"  Margin="0,0,15,55" />
+            <ToggleButton x:Name="OpenCloseSlideMenuBtn" Height="40" Width="40" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,20,10">
+                <ToggleButton.Template>
+                    <ControlTemplate>
+                        <Image>
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources/Icons/Open.png"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ToggleButton}}, Path=IsChecked}" Value="false">
+                                            <Setter Property="Source" Value="Resources/Icons/Close.png"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </ControlTemplate>
+                </ToggleButton.Template>
+            </ToggleButton>
+        </Grid>
     </Border>
 
 </Page>
-
-
-
-
-<!--<Button Grid.Column="0" Grid.Row="0" Content="Статусы" IsEnabled="{Binding GettingTaskInRun}">
-    <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Click">
-            <i:InvokeCommandAction Command="{Binding LeftClickStatusSelectButton}"/>
-        </i:EventTrigger>
-        <i:EventTrigger EventName="MouseRightButtonDown">
-            <i:InvokeCommandAction Command="{Binding RightClickStatusSelectButton}"/>
-        </i:EventTrigger>
-    </i:Interaction.Triggers>
-</Button>
-<Button Grid.Column="1" Grid.Row="0" Content="Типы" IsEnabled="{Binding GettingTaskInRun}">
-    <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Click">
-            <i:InvokeCommandAction Command="{Binding LeftClickTypeSelectButton}"/>
-        </i:EventTrigger>
-        <i:EventTrigger EventName="MouseRightButtonDown">
-            <i:InvokeCommandAction Command="{Binding RightClickTypeSelectButton}"/>
-        </i:EventTrigger>
-    </i:Interaction.Triggers>
-</Button>-->
-<!--<ListBox Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TaskStatuses}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="1">
-    <ListBox.ItemTemplate>
-        <DataTemplate>
-            <StackPanel>
-                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
-            </StackPanel>
-        </DataTemplate>
-    </ListBox.ItemTemplate>
-</ListBox>
-
-<ListBox Grid.Column="1" Grid.Row="1" ItemsSource="{Binding TaskTypes}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="1">
-    <ListBox.ItemTemplate>
-        <DataTemplate>
-            <StackPanel>
-                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
-            </StackPanel>
-        </DataTemplate>
-    </ListBox.ItemTemplate>
-</ListBox>-->

@@ -16,10 +16,11 @@ namespace AqbaApp.Model.OkdeskReport
         public string Comment { get; set; }
         public Group[] Groups { get; set; }
         public Role[] Roles { get; set; }
-        public int OpenTasks { get; set; }
         public string FullName { get { return $"{Last_name} {First_name} {Patronymic}"; } }
+        public Issue[] Issues { get; set; }
         public int SolvedTasks { get; set; }
-        public bool IsSelected { get; set; } = true;
+        public int OpenTasks { get; set; }
+        public double SpentedTimeDouble { get; set; }
         public string SpentedTime
         {
             get
@@ -28,10 +29,8 @@ namespace AqbaApp.Model.OkdeskReport
                 var minutes = Math.Round((SpentedTimeDouble - hours) * 60);
                 return $"{hours} ч. {minutes} м.";
             }
-        }
-        public int SpentedHours { get; set; }
-        public int SpentedMinutes { get; set; }
-        public double SpentedTimeDouble { get; set; }
+        }        
+        public bool IsSelected { get; set; } = true;
 
         public Employee() { }
         public Employee(Employee employee)
@@ -49,6 +48,7 @@ namespace AqbaApp.Model.OkdeskReport
             Roles = employee.Roles;
             OpenTasks = employee.OpenTasks;
             SolvedTasks = employee.SolvedTasks;
+            Issues = employee.Issues;
             IsSelected = employee.IsSelected;
         }
 

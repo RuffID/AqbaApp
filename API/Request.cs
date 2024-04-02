@@ -291,6 +291,93 @@ namespace AqbaApp.API
             return false;
         }
 
+        public static async Task<bool> GetStatuses(ObservableCollection<Status> statuses)
+        {
+            statuses.Clear();
+            Status[] status;
+
+            var response = await GetResponse($"{serverAddress}/issueStatus");
+
+            if (!string.IsNullOrEmpty(response) && response != "[]")
+            {
+                try
+                {
+                    status = JsonConvert.DeserializeObject<Status[]>(response);
+
+                    foreach (var st in status)
+                    {
+                        statuses.Add(st);
+                    }
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    WriteLog.Error(e.ToString());
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        public static async Task<bool> GetTypes(ObservableCollection<TaskType> types)
+        {
+            types.Clear();
+            TaskType[] type;
+
+            var response = await GetResponse($"{serverAddress}/issueType");
+
+            if (!string.IsNullOrEmpty(response) && response != "[]")
+            {
+                try
+                {
+                    type = JsonConvert.DeserializeObject<TaskType[]>(response);
+
+                    foreach (var tp in type)
+                    {
+                        types.Add(tp);
+                    }
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    WriteLog.Error(e.ToString());
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        public static async Task<bool> GetPriorities(ObservableCollection<Priority> priorities)
+        {
+            priorities.Clear();
+            Priority[] priority;
+
+            var response = await GetResponse($"{serverAddress}/issuePriority");
+
+            if (!string.IsNullOrEmpty(response) && response != "[]")
+            {
+                try
+                {
+                    priority = JsonConvert.DeserializeObject<Priority[]>(response);
+
+                    foreach (var pt in priority)
+                    {
+                        priorities.Add(pt);
+                    }
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    WriteLog.Error(e.ToString());
+                    return false;
+                }
+            }
+            return false;
+        }
+
         public static async Task GetEmployeePerformance(List<Employee> employees, DateTime dateFrom, DateTime dateTo, string requestType)
         {
             foreach (var emp in employees)
@@ -316,6 +403,7 @@ namespace AqbaApp.API
                         int index = employees.IndexOf(e);   // Получение id сотрудника
                         employees[index].SolvedTasks = emp.SolvedTasks; // Назначает решённые задачи и списанное время по id
                         employees[index].SpentedTimeDouble = emp.SpentedTime;
+                        employees[index].Issues = emp.Issues;
                     }
                 }
                 catch (Exception e)
@@ -390,6 +478,22 @@ namespace AqbaApp.API
             return null;
         }
 
+        public static async Task<string> GetLastUpdateTime()
+        {
+            var response = await GetResponse($"{serverAddress}/employeePerformance/time");
+
+            if (!string.IsNullOrEmpty(response))
+            {
+                try
+                {
+                    var date = Convert.ToDateTime(response.Replace("\"", "").Replace("\\", ""));
+                    return $"Время: {date:HH:mm}";
+                }
+                catch (Exception ex) { WriteLog.Warn(ex.ToString()); return null; }                
+            }
+            return null;
+        }
+
         public static async Task<string> GetResponse(string link)
         {
             try
@@ -407,7 +511,6 @@ namespace AqbaApp.API
             }
             catch (HttpRequestException e)
             {
-                View.MessageBox.Show("", "Нет связи с сервером, проверьте интернет подключение.", MessageBoxButton.OK);
                 WriteLog.Warn(e.ToString());
                 return null;
             }
@@ -431,7 +534,6 @@ namespace AqbaApp.API
             }
             catch (HttpRequestException e)
             {
-                View.MessageBox.Show("", "Нет связи с сервером, проверьте интернет подключение.", MessageBoxButton.OK);
                 WriteLog.Warn(e.ToString());
                 return null;
             }
@@ -455,7 +557,6 @@ namespace AqbaApp.API
             }
             catch (HttpRequestException e)
             {
-                View.MessageBox.Show("", "Нет связи с сервером, проверьте интернет подключение.", MessageBoxButton.OK);
                 WriteLog.Warn(e.ToString());
                 return null;
             }

@@ -3,9 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using AqbaApp.API;
 using AqbaApp.Helper;
-using AqbaApp.Model.Authorization;
 using AqbaApp.View;
 
 namespace AqbaApp.ViewModel

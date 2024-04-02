@@ -19,8 +19,12 @@ namespace AqbaApp.ViewModel
             ActiveEmployees = [];
             TaskStatuses = [];
             TaskTypes = [];
+            Priorities = [];
             Groups = [];
             CheckedGroups = [];
+            CheckedStatuses = [];
+            CheckedPriorities = [];
+            CheckedTypes = [];
             LoadConfig();
 
             timer = new(DispatcherPriority.Render)
@@ -31,6 +35,7 @@ namespace AqbaApp.ViewModel
             {                
                 await GetPerformance();
             };
+            timer.Start();
         }
 
         #region [Variables]
@@ -39,25 +44,36 @@ namespace AqbaApp.ViewModel
         string fullNameBackgroundColor;
         string spendedTimeBackgroundColor;
         string solvedTasksBackgroundColor;
+        string openTasksBackgroundColor;
+        string lastUpdateTime;
         readonly DispatcherTimer timer;
         bool gettingTaskInRun = true;
         string pathToBackground;
-        List<string> checkedGroups;        
+        List<string> checkedGroups;
+        List<string> checkedTypes;
+        List<string> checkedStatuses;
+        List<string> checkedPriorities;
         DateTime selectedDateFrom;
         DateTime selectedDateTo;
         ObservableCollection<Employee> activeEmployees;
         ObservableCollection<Status> taskStatuses;
         ObservableCollection<Group> groups;
         ObservableCollection<TaskType> taskTypes;
+        ObservableCollection<Priority> priorities;
         RelayCommand reportPageLoaded;
         RelayCommand getOpenTasks;
         RelayCommand checkedGroup;
-        /*RelayCommand leftClickStatusSelectButton;
+        RelayCommand checkedOpenTasks;
+        RelayCommand checkedType;
+        RelayCommand checkedPriority;
+        RelayCommand leftClickStatusSelectButton;
         RelayCommand rigthClickStatusSelectButton;
         RelayCommand leftClickTypeSelectButton;
-        RelayCommand rigthClickTypeSelectButton;*/
+        RelayCommand rigthClickTypeSelectButton;
         RelayCommand leftClickGroupSelectButton;
         RelayCommand rigthClickGroupSelectButton;
+        RelayCommand leftClickPrioritySelectButton;
+        RelayCommand rigthClickPrioritySelectButton;
 
         #endregion
 
@@ -105,6 +121,16 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public List<string> CheckedStatuses
+        {
+            get { return checkedStatuses; }
+            set
+            {
+                checkedStatuses = value;
+                OnPropertyChanged(nameof(CheckedStatuses));
+            }
+        }
+
         public ObservableCollection<TaskType> TaskTypes
         {
             get { return taskTypes; }
@@ -112,6 +138,36 @@ namespace AqbaApp.ViewModel
             {
                 taskTypes = value;
                 OnPropertyChanged();
+            }
+        }
+
+        public List<string> CheckedTypes
+        {
+            get { return checkedTypes; }
+            set
+            {
+                checkedTypes = value;
+                OnPropertyChanged(nameof(CheckedTypes));
+            }
+        }
+
+        public ObservableCollection<Priority> Priorities
+        {
+            get { return priorities; }
+            set
+            {
+                priorities = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public List<string> CheckedPriorities
+        {
+            get { return checkedPriorities; }
+            set
+            {
+                checkedPriorities = value;
+                OnPropertyChanged(nameof(CheckedPriorities));
             }
         }
 
@@ -131,6 +187,16 @@ namespace AqbaApp.ViewModel
             set
             {
                 selectedDateTo = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string LastUpdateTime
+        {
+            get { return lastUpdateTime; }
+            set
+            {
+                lastUpdateTime = value;
                 OnPropertyChanged();
             }
         }
@@ -199,6 +265,17 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public string OpenTasksBackgroundColor
+        {
+            get { return openTasksBackgroundColor; }
+            set
+            {
+                openTasksBackgroundColor = value;
+                Config.Settings.OpenTasksBackgroundColor = value;
+                OnPropertyChanged();
+            }
+        }
+
         #endregion
 
         #region [Commands]
@@ -207,16 +284,11 @@ namespace AqbaApp.ViewModel
             get
             {
                 return reportPageLoaded ??= new RelayCommand((o) =>
-                {                    
-
-                    /*if (TaskStatuses.Count == 0)
+                {
+                    if (Config.Settings.ElectronicQueueMode)
                     {
-                        await OkdeskApi.GetStatuses(TaskStatuses);
-                        SetOpenStatus();                        
+                        timer.Start();
                     }
-
-                    if (TaskTypes.Count == 0)
-                        await OkdeskApi.GetTypes(TaskTypes);*/
                 });
             }
         }
@@ -240,12 +312,27 @@ namespace AqbaApp.ViewModel
                 {
                     CheckGroup(); // Проверка выделенных групп
                     SortEmployees(); // Сортировка сотрудников
-                    SaveCheckedGroups(); // Сохранение выделенных групп в конфиг
+                    SaveCheckedGroups(); // Сохранение выделенных групп в конфиг                    
                 });
             }
         }
 
-        /*public RelayCommand LeftClickStatusSelectButton
+        public RelayCommand CheckedOpenTasks
+        {
+            get
+            {
+                return checkedOpenTasks ??= new RelayCommand((o) =>
+                {
+                    CheckOpenTasks(); // Проверка открытых заявок
+                    SortEmployees(); // Сортировка сотрудников
+                    SaveCheckedStatuses(); // Сохранение выделенных статусов в конфиг
+                    SaveCheckedPriorities();
+                    SaveCheckedTypes();
+                });
+            }
+        }
+
+        public RelayCommand LeftClickStatusSelectButton
         {
             get
             {
@@ -253,6 +340,8 @@ namespace AqbaApp.ViewModel
                 {
                     foreach (var status in TaskStatuses)
                         status.IsChecked = true;
+                    CheckOpenTasks();
+                    SortEmployees();
                 });
             }
         }
@@ -265,6 +354,8 @@ namespace AqbaApp.ViewModel
                 {
                     foreach (var status in TaskStatuses)
                         status.IsChecked = false;
+                    CheckOpenTasks();
+                    SortEmployees();
                 });
             }
         }
@@ -277,6 +368,8 @@ namespace AqbaApp.ViewModel
                 {
                     foreach (var type in TaskTypes)
                         type.IsChecked = true;
+                    CheckOpenTasks();
+                    SortEmployees();
                 });
             }
         }
@@ -289,9 +382,11 @@ namespace AqbaApp.ViewModel
                 {
                     foreach (var type in TaskTypes)
                         type.IsChecked = false;
+                    CheckOpenTasks();
+                    SortEmployees();
                 });
             }
-        }*/
+        }
 
         public RelayCommand LeftClickGroupSelectButton
         {
@@ -319,7 +414,35 @@ namespace AqbaApp.ViewModel
                     SortEmployees();
                 });
             }
-        }   
+        }
+
+        public RelayCommand LeftClickPrioritySelectButton
+        {
+            get
+            {
+                return leftClickPrioritySelectButton ??= new RelayCommand((o) =>
+                {
+                    foreach (var prior in Priorities)
+                        prior.IsChecked = true;
+                    CheckOpenTasks();
+                    SortEmployees();
+                });
+            }
+        }
+
+        public RelayCommand RightClickPrioritySelectButton
+        {
+            get
+            {
+                return rigthClickPrioritySelectButton ??= new RelayCommand((o) =>
+                {
+                    foreach (var prior in Priorities)
+                        prior.IsChecked = false;
+                    CheckOpenTasks();
+                    SortEmployees();
+                });
+            }
+        }
 
         #endregion
 
@@ -329,6 +452,15 @@ namespace AqbaApp.ViewModel
         {
             if (Config.Settings.CheckedGroups != null && Config.Settings.CheckedGroups.Length != 0)
                 CheckedGroups = Config.Settings.CheckedGroups.ToList();
+
+            if (Config.Settings.CheckedStatuses != null && Config.Settings.CheckedStatuses.Length != 0)
+                CheckedStatuses = Config.Settings.CheckedStatuses.ToList();
+
+            if (Config.Settings.CheckedTypes != null && Config.Settings.CheckedTypes.Length != 0)
+                CheckedTypes = Config.Settings.CheckedTypes.ToList();
+
+            if (Config.Settings.CheckedPriorities != null && Config.Settings.CheckedPriorities.Length != 0)
+                CheckedPriorities = Config.Settings.CheckedPriorities.ToList();
 
             if (string.IsNullOrEmpty(Config.Settings.PathToBackground))
                 PathToBackground = "View/Resources/Background/White.png";
@@ -346,6 +478,9 @@ namespace AqbaApp.ViewModel
             if (Config.Settings.SpendedTimeFontSize > 72 || Config.Settings.SpendedTimeFontSize < 8)
                 Config.Settings.SpendedTimeFontSize = 16;
 
+            if (Config.Settings.OpenTasksFontSize > 72 || Config.Settings.OpenTasksFontSize < 8)
+                Config.Settings.OpenTasksFontSize = 16;
+
             if (string.IsNullOrEmpty(Config.Settings.HeaderBackgroundColor))            
                 HeaderBackgroundColor = "#000000";
             else HeaderBackgroundColor = Config.Settings.HeaderBackgroundColor;
@@ -361,6 +496,10 @@ namespace AqbaApp.ViewModel
             if (string.IsNullOrEmpty(Config.Settings.SpendedTimeBackgroundColor))
                 SpendedTimeBackgroundColor = "#000000";
             else SpendedTimeBackgroundColor = Config.Settings.SpendedTimeBackgroundColor;
+
+            if (string.IsNullOrEmpty(Config.Settings.OpenTasksBackgroundColor))
+                OpenTasksBackgroundColor = "#000000";
+            else OpenTasksBackgroundColor = Config.Settings.OpenTasksBackgroundColor;
         }        
 
         public void SaveBackgroundPath(string path)
@@ -391,16 +530,74 @@ namespace AqbaApp.ViewModel
             }
         }
 
-        async Task GetPerformance(string requestType = "auto")
-        {            
-            GettingTaskInRun = false;
-            timer.Stop();
-            if (Config.Settings.ElectronicQueueMode)
-            {
-                SelectedDateTo = DateTime.Now;
-                SelectedDateFrom = DateTime.Now;
-            }
+        public void SaveCheckedStatuses()
+        {
+            CheckedStatuses?.Clear();
 
+            foreach (var status in TaskStatuses)
+                if (status.IsChecked)
+                    CheckedStatuses.Add(status.Name);
+
+            Config.Settings.CheckedStatuses = CheckedStatuses.ToArray();
+        }
+
+        void LoadCheckedStatuses()
+        {
+            if (Config.Settings.CheckedStatuses != null && Config.Settings.CheckedStatuses.Length != 0)
+            {
+                foreach (var status in TaskStatuses)
+                    if (Config.Settings.CheckedStatuses.Contains(status.Name))
+                        status.IsChecked = true;
+                    else status.IsChecked = false;
+            }
+        }
+
+        public void SaveCheckedTypes()
+        {
+            CheckedTypes?.Clear();
+
+            foreach (var type in TaskTypes)
+                if (type.IsChecked)
+                    CheckedTypes.Add(type.Name);
+
+            Config.Settings.CheckedTypes = CheckedTypes.ToArray();
+        }
+
+        void LoadCheckedTypes()
+        {
+            if (Config.Settings.CheckedTypes != null && Config.Settings.CheckedTypes.Length != 0)
+            {
+                foreach (var type in TaskTypes)
+                    if (Config.Settings.CheckedTypes.Contains(type.Name))
+                        type.IsChecked = true;
+                    else type.IsChecked = false;
+            }
+        }
+
+        public void SaveCheckedPriorities()
+        {
+            CheckedPriorities?.Clear();
+
+            foreach (var priority in Priorities)
+                if (priority.IsChecked)
+                    CheckedPriorities.Add(priority.Name);
+
+            Config.Settings.CheckedPriorities = CheckedPriorities.ToArray();
+        }
+
+        void LoadCheckedPriorities()
+        {
+            if (Config.Settings.CheckedPriorities != null && Config.Settings.CheckedPriorities.Length != 0)
+            {
+                foreach (var priority in Priorities)
+                    if (Config.Settings.CheckedPriorities.Contains(priority.Name))
+                        priority.IsChecked = true;
+                    else priority.IsChecked = false;
+            }
+        }
+
+        async Task CheckDictionaries()
+        {
             if (Employees?.Count <= 0)
             {
                 var temp = (await Request.GetEmployees())?.ToList();
@@ -424,14 +621,64 @@ namespace AqbaApp.ViewModel
                 else LoadCheckedGroups();
             }
 
-            if (Employees?.Count > 0 && Groups.Count > 0)
+            if (TaskStatuses.Count <= 0)
+            {
+                if (!await Request.GetStatuses(TaskStatuses))
+                {
+                    GettingTaskInRun = true;
+                    return;
+                }
+                if (TaskStatuses != null && TaskStatuses.Count <= 0)
+                    SaveCheckedStatuses();
+                else LoadCheckedStatuses();
+            }
+
+            if (TaskTypes.Count <= 0)
+            {
+                if (!await Request.GetTypes(TaskTypes))
+                {
+                    GettingTaskInRun = true;
+                    return;
+                }
+                if (TaskTypes != null && TaskTypes.Count <= 0)
+                    SaveCheckedTypes();
+                else LoadCheckedTypes();
+            }
+
+            if (Priorities.Count <= 0)
+            {
+                if (!await Request.GetPriorities(Priorities))
+                {
+                    GettingTaskInRun = true;
+                    return;
+                }
+                if (Priorities != null && Priorities.Count <= 0)
+                    SaveCheckedPriorities();
+                else LoadCheckedPriorities();
+            }
+        }
+
+        async Task GetPerformance(string requestType = "auto")
+        {            
+            GettingTaskInRun = false;
+            if (Config.Settings.ElectronicQueueMode)
+            {
+                SelectedDateTo = DateTime.Now;
+                SelectedDateFrom = DateTime.Now;
+            }
+
+            await CheckDictionaries();
+            SetOpenStatus();
+
+            if (Employees?.Count > 0 && Groups.Count > 0 && TaskTypes.Count > 0 && Priorities.Count > 0 && TaskStatuses.Count > 0)
             {
                 await Request.GetEmployeePerformance(Employees, SelectedDateFrom, SelectedDateTo, requestType);
 
                 CheckGroup();
-                SortEmployees();
-                timer.Start();
+                CheckOpenTasks();
+                SortEmployees();                
             }
+            LastUpdateTime = await Request.GetLastUpdateTime();
             GettingTaskInRun = true;
         }
 
@@ -443,7 +690,7 @@ namespace AqbaApp.ViewModel
             if (Employees != null)
             {
                 Employees.Sort();
-                foreach (var employee in Employees.Where(e => e.Active))
+                foreach (var employee in Employees)
                 {
                     // Если сотрудник активен, то есть имеет решённые/открытые заявки или списанное время, то добавить в активные
                     if ((employee.OpenTasks != 0 || employee.SolvedTasks != 0 || employee.SpentedTimeDouble != 0) && employee.IsSelected == true)
@@ -457,13 +704,12 @@ namespace AqbaApp.ViewModel
         void CheckGroup()
         {
             // Находит всех активных сотрудников
-            foreach (var employee in Employees.Where(e => e.Active))
+            foreach (var employee in Employees)
             {
                 // Проходит по всем чекбоксам групп
                 for (var i = 0; i < Groups.Count; i++)
                 {
                     // Если сотрудник состоит в группе и она выделена в чекбоксе, то
-                    //if (Groups[i]?.Employees?.Contains(employee) == true && Groups[i].IsChecked == true)
                     if (Groups[i]?.EmployeesId.Contains(employee.Id) == true && Groups[i].IsChecked == true)
                     {
                         // Если сотрудника отключили (убрав чекбокс с группы), а теперь включили назад,
@@ -480,6 +726,29 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        void CheckOpenTasks()
+        {
+            foreach (var employee in Employees)
+            {
+                employee.OpenTasks = 0;
+                int? count = 0;
+
+                // Сначала получает список всех заявок по сотруднику, которые имеют "статус" выбранный (isChecked) в приложении галочкой
+                // После ищет список заявок который помимо статуса имеют выбранный "тип"
+                // Предпослений "Where" получает итоговый список заявок которые имеют выбранный "приоритет"
+                // Count считает количество найденных заявок
+                count = employee?.Issues
+                    ?.Where( i => i?.StatusId == TaskStatuses?.FirstOrDefault( ts => ts.IsChecked && ts.Id == i?.StatusId )?.Id )
+                    ?.Where( i => i?.TypeId == TaskTypes?.FirstOrDefault( tt => tt.IsChecked && tt.Id == i?.TypeId )?.Id )
+                    ?.Where( i => i?.PriorityId == Priorities?.FirstOrDefault( p => p.IsChecked && p.Id == i?.PriorityId )?.Id)
+                    ?.Count();
+
+                // Если количество является не null, то записывает его в открытые заявки сотрудника
+                if (count != null && count > 0)
+                    employee.OpenTasks += (int)count;
+            }
+        }
+
         void SetOpenStatus()
         {
             foreach (var status in TaskStatuses)
@@ -493,7 +762,7 @@ namespace AqbaApp.ViewModel
                     case "injob":
                         status.IsChecked = true; break;
                 }
-            }
+            }            
         }
 
         #endregion

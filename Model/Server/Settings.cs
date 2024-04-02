@@ -18,6 +18,8 @@ namespace AqbaApp.Model.Server
         [JsonProperty]
         public int SpendedTimeFontSize { get; set; }
         [JsonProperty]
+        public int OpenTasksFontSize { get; set; }
+        [JsonProperty]
         public string HeaderBackgroundColor { get; set; }
         [JsonProperty]
         public string FullNameBackgroundColor { get; set; }
@@ -26,7 +28,15 @@ namespace AqbaApp.Model.Server
         [JsonProperty]
         public string SolvedTasksBackgroundColor { get; set; }
         [JsonProperty]
+        public string OpenTasksBackgroundColor { get; set; }
+        [JsonProperty]
         public string[] CheckedGroups { get; set; }
+        [JsonProperty]
+        public string[] CheckedStatuses { get; set; }
+        [JsonProperty]
+        public string[] CheckedTypes { get; set; }
+        [JsonProperty]
+        public string[] CheckedPriorities { get; set; }
         [JsonProperty]
         public bool ElectronicQueueMode { get; set; }
         [JsonProperty]

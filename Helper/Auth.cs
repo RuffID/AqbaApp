@@ -48,6 +48,7 @@ namespace AqbaApp.Helper
 
         static bool OpenAuthWindow()
         {
+            AuthorizationWindow Login = new();
 
             while (true)
             {
@@ -56,7 +57,7 @@ namespace AqbaApp.Helper
                     return false;
                 else if (result == true)
                     return true;
-            }            
+            }
         }
 
         public static async Task<bool> LoginInService(string email, string password)
