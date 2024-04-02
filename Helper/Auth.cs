@@ -48,7 +48,6 @@ namespace AqbaApp.Helper
 
         static bool OpenAuthWindow()
         {
-            AuthorizationWindow Login = new();
 
             while (true)
             {
