@@ -35,7 +35,6 @@ namespace AqbaApp.ViewModel
             {                
                 await GetPerformance();
             };
-            timer.Start();
         }
 
         #region [Variables]
@@ -659,7 +658,8 @@ namespace AqbaApp.ViewModel
         }
 
         async Task GetPerformance(string requestType = "auto")
-        {            
+        {
+            timer.Start();
             GettingTaskInRun = false;
             if (Config.Settings.ElectronicQueueMode)
             {

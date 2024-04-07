@@ -1,0 +1,91 @@
+﻿<Page x:Class="AqbaApp.View.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:vm="clr-namespace:AqbaApp.ViewModel"
+      xmlns:namespace="clr-namespace:AqbaApp"      
+      mc:Ignorable="d" 
+      d:Background="White"
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="SettingsPage"
+      x:Name="SettingsPageElement">
+
+
+    <Page.DataContext>
+        <vm:SettingsViewModel/>
+    </Page.DataContext>
+
+    <Page.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Roboto"/>
+        </Style>
+
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontFamily" Value="Roboto"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Page.Resources>
+    
+    <Grid>
+        <TabControl x:Name="TabSettings">
+            <TabItem Header="Общие настройки" Background="Transparent">
+                <TabItem.Content>
+                    <Grid Margin="15,15,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="40"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Адрес сервера: " HorizontalAlignment="Left"/>
+                        <TextBox Grid.Column="1" Text="{Binding Path=ServerAddress, Source={x:Static namespace:Config.Settings}}" MinWidth="300" FontSize="16" FontFamily="Roboto" HorizontalAlignment="Left" VerticalAlignment="Center" TextAlignment="Justify" BorderThickness="1" BorderBrush="Black"/>
+
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+            <TabItem Header="Пути до приложений" Background="Transparent">
+                <TabItem.Content>
+                    <Grid Margin="15,15,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="400"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Путь до CLEAR.bat" HorizontalAlignment="Left" />
+                        <TextBlock Grid.Row="1" Text="{Binding PathToCLEARbat}" FontSize="14" Foreground="Gray" HorizontalAlignment="Left"/>
+                        <Button Grid.Row="0" Grid.Column="1" Content="Путь" Background="#1D3D55" VerticalAlignment="Center" HorizontalAlignment="Left" Height="40" Width="150" Grid.RowSpan="2" Click="SaveClearBatPath_OnClick" Style="{StaticResource EclipceButtonTheme}"/>
+
+                        <TextBlock Grid.Row="2" Text="Путь до Anydesk" HorizontalAlignment="Left" />
+                        <TextBlock Grid.Row="3" Text="{Binding PathToAnydesk}" FontSize="14"  Foreground="Gray" HorizontalAlignment="Left"/>
+                        <Button Grid.Row="2" Grid.Column="1" Content="Путь" Background="#1D3D55" VerticalAlignment="Center" HorizontalAlignment="Left" Height="40" Width="150" Grid.RowSpan="2" Click="SaveAnyDeskPath_OnClick" Style="{StaticResource EclipceButtonTheme}"/>
+
+                        <TextBlock Grid.Row="4" Text="Путь до Ammy Admin"  HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Row="5" Text="{Binding PathToAmmyAdmin}" FontSize="14"  Foreground="Gray" HorizontalAlignment="Left"/>
+                        <Button Grid.Row="4" Grid.Column="1" Content="Путь" Background="#1D3D55" VerticalAlignment="Center" HorizontalAlignment="Left" Height="40" Width="150" Grid.RowSpan="2" Click="SaveAmmyAdminPath_OnClick" Style="{StaticResource EclipceButtonTheme}"/>
+
+                        <TextBlock Grid.Row="6" Text="Путь до Ассистента" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Row="7" Text="{Binding PathToAssistant}" FontSize="14"  Foreground="Gray" HorizontalAlignment="Left"/>
+                        <Button Grid.Row="6" Grid.Column="1" Content="Путь" Background="#1D3D55" VerticalAlignment="Center" HorizontalAlignment="Left" Height="40" Width="150" Grid.RowSpan="2" Click="SaveAssistant_OnClick" Style="{StaticResource EclipceButtonTheme}"/>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+        </TabControl>        
+    </Grid>
+</Page>

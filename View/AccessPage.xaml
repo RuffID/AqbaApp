@@ -171,7 +171,7 @@
                     <Image Source="Resources/Icons/iikoOffice_icon.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenIIKO}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenIIKOOffice}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -179,7 +179,23 @@
                     <Image Source="Resources/Icons/iikoChain_icon.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenChain}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenIIKOChain}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                <Button x:Name="ammyAdminLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding AmmyAdminBtnVisibility}">
+                    <Image Source="Resources/Icons/ammyadmin.ico"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenAmmyAdmin}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                <Button x:Name="assistantLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding AssistantBtnVisibility}">
+                    <Image Source="Resources/Icons/assistant.ico"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenAssistant}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>

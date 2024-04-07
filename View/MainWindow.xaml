@@ -41,15 +41,26 @@
 
 
         <Border Grid.Column="0"  BorderBrush="#1D3D55" BorderThickness="1" Visibility="Visible" Margin="2,2,0,2">
-            <StackPanel>
-                <Button Name="Login"  VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenLoginPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="70"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="70"/>
+                </Grid.RowDefinitions>
+                
+                <Button Name="Login" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenLoginPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
                     <Image Source="Resources/Icons/password.png" Stretch="Uniform" Height="40" Width="40"/>
                 </Button>
 
-                <Button Name="Report" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenReportPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+                <Button Name="Report" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenReportPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
                     <Image Source="Resources/Icons/report.png" Height="40" Width="40"/>
                 </Button>
-            </StackPanel>
+
+                <Button Name="Settings" Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenSettingsPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+                    <Image Source="Resources/Icons/settings.png" Height="40" Width="40"/>
+                </Button>
+            </Grid>
         </Border>
 
 

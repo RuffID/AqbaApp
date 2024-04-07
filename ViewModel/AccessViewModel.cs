@@ -4,6 +4,8 @@ using System.Linq;
 using AqbaApp.Model.OkdeskEntities;
 using AqbaApp.API;
 using System;
+using System.Windows;
+using System.IO;
 
 namespace AqbaApp.ViewModel
 {
@@ -31,6 +33,8 @@ namespace AqbaApp.ViewModel
         string anydeskBtnVisibility = "Collapsed";
         string iikoOfficeBtnVisibility = "Collapsed";
         string iikoChainBtnVisibility = "Collapsed";
+        string ammyAdminBtnVisibility = "Collapsed";
+        string assistantBtnVisibility = "Collapsed";
         ObservableCollection<Category> categories;
         ObservableCollection<Company> companies;
         ObservableCollection<Company> filteredListOfCompanies;
@@ -52,6 +56,8 @@ namespace AqbaApp.ViewModel
         RelayCommand openAnydesk;
         RelayCommand openOffice;
         RelayCommand openChain;
+        RelayCommand openAmmyAdmin;
+        RelayCommand openAssistant;
         RelayCommand updateEquipment;
         RelayCommand updateCompany;
         RelayCommand updateMaintenanceEntity;
@@ -126,6 +132,8 @@ namespace AqbaApp.ViewModel
                     AnydeskBtnVisibility = "Collapsed";
                     IIKOOfficeBtnVisibility = "Collapsed";
                     IIKOChainBtnVisibility = "Collapsed";
+                    AmmyAdminBtnVisibility = "Collapsed";
+                    AssistantBtnVisibility = "Collapsed";
                 }
                 currentEquipment = value;
                 OnPropertyChanged(nameof(CurrentEquipment));
@@ -158,7 +166,7 @@ namespace AqbaApp.ViewModel
             set
             {
                 anydeskBtnVisibility = value;
-                OnPropertyChanged("AnydeskBtnVisibility");
+                OnPropertyChanged(nameof(AnydeskBtnVisibility));
             }
         }
 
@@ -168,7 +176,7 @@ namespace AqbaApp.ViewModel
             set
             {
                 iikoOfficeBtnVisibility = value;
-                OnPropertyChanged("IIKOOfficeBtnVisibility");
+                OnPropertyChanged(nameof(IIKOOfficeBtnVisibility));
             }
         }
 
@@ -178,9 +186,30 @@ namespace AqbaApp.ViewModel
             set
             {
                 iikoChainBtnVisibility = value;
-                OnPropertyChanged("IIKOChainBtnVisibility");
+                OnPropertyChanged(nameof(IIKOChainBtnVisibility));
             }
         }
+
+        public string AmmyAdminBtnVisibility
+        {
+            get { return ammyAdminBtnVisibility; }
+            set
+            {
+                ammyAdminBtnVisibility = value;
+                OnPropertyChanged(nameof(AmmyAdminBtnVisibility));
+            }
+        }
+
+        public string AssistantBtnVisibility
+        {
+            get { return assistantBtnVisibility; }
+            set
+            {
+                assistantBtnVisibility = value;
+                OnPropertyChanged(nameof(AssistantBtnVisibility));
+            }
+        }
+
 
         #endregion
 
@@ -356,6 +385,14 @@ namespace AqbaApp.ViewModel
                         CurrentEquipment.Equipment_kind?.Code == "0010")
                             IIKOChainBtnVisibility = "Visible";
                         else IIKOChainBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
+                            AmmyAdminBtnVisibility = "Visible";
+                        else AmmyAdminBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
+                            AssistantBtnVisibility = "Visible";
+                        else AssistantBtnVisibility = "Collapsed";
                     }
                 });
             }
@@ -397,6 +434,14 @@ namespace AqbaApp.ViewModel
                         CurrentEquipment.Equipment_kind?.Code == "0010")
                             IIKOChainBtnVisibility = "Visible";
                         else IIKOChainBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
+                            AmmyAdminBtnVisibility = "Visible";
+                        else AmmyAdminBtnVisibility = "Collapsed";
+
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
+                            AssistantBtnVisibility = "Visible";
+                        else AssistantBtnVisibility = "Collapsed";
                     }
                 });
             }
@@ -419,80 +464,215 @@ namespace AqbaApp.ViewModel
             {
                 return openAnydesk ??= new RelayCommand((o) =>
                 {
-                    if (CurrentEquipment != null)
+                    if (CurrentEquipment == null) return;
+
+                    try
                     {
-                        string pathToAd = @"""C:\Program Files (x86)\AnyDesk\Anydesk.exe""";
-                        
-                        string anydeskFull = CurrentEquipment.Parameters.Find(equip => equip.Code == "AnyDesk").Value.Replace(" ", "");
-                        string[] idAndPass = anydeskFull.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string pathToAd = Config.Settings.PathToAnydesk;
+                        if (string.IsNullOrEmpty(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Укажите путь до AnyDesk.exe в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        if (!File.Exists(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Не удалось найти файл AnyDesk.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        string anydeskFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AnyDesk")?.Value?.Replace(" ", "");
+                        string[] idAndPass = anydeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
                         string id = string.Empty;
                         string pass = string.Empty;
 
-                        if (idAndPass.Length <= 0)
-                            return;
+                        if (idAndPass?.Length <= 0) return;
 
-                        if (idAndPass[0] != null)
-                            id = idAndPass[0];
+                        if (idAndPass?[0] != null) id = idAndPass?[0];
 
-                        if (idAndPass.Length > 1 && idAndPass[1] != null)
-                            pass = idAndPass[1];
+                        if (string.IsNullOrEmpty(id)) return;
 
-                        if (!string.IsNullOrEmpty(id))
+                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1]?.Replace("%", "%%")?.Replace("&", "^&");
+
+                        var startInfo = new ProcessStartInfo()
                         {
-                            var startInfo = new ProcessStartInfo()
-                            {
-                                FileName = "cmd.exe",
-                                Arguments = $"/k echo {pass} | {pathToAd} {id} --with-password && exit",
-                                UseShellExecute = false,
-                                CreateNoWindow = true
-                            };
-                            Process.Start(startInfo);
-                        }
+                            FileName = "cmd.exe",
+                            Arguments = $"/k echo {pass} | {"\"" + pathToAd + "\""} {id} --with-password && exit",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(startInfo);
                     }
+                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
                 });
             }
         }
 
-        public RelayCommand OpenIIKO
+        public RelayCommand OpenAmmyAdmin
+        {
+            get
+            {
+                return openAmmyAdmin ??= new RelayCommand((o) =>
+                {
+                    if (CurrentEquipment == null) return;
+
+                    try
+                    {
+                        string pathToAA = Config.Settings.PathToAmmyAdmin;
+                        if (string.IsNullOrEmpty(pathToAA))
+                        {
+                            View.MessageBox.Show("Ошибка", "Укажите путь до AA_3.exe в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        if (!File.Exists(pathToAA))
+                        {
+                            View.MessageBox.Show("Ошибка", "Не удалось найти файл AA_3.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        string ammyadminFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AA")?.Value?.Replace(" ", "");
+                        string[] idAndPass = ammyadminFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string id = string.Empty;
+                        string pass = string.Empty;
+
+                        if (idAndPass?.Length <= 0) return;
+
+                        if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                        if (string.IsNullOrEmpty(id)) return;
+
+                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                        var startInfo = new ProcessStartInfo()
+                        {
+                            FileName = "\"" + pathToAA + "\"",
+                            Arguments = $" -connect {id} -password {pass}",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(startInfo);
+                    }
+                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
+                });
+            }
+        }
+
+        public RelayCommand OpenAssistant
+        {
+            get
+            {
+                return openAssistant ??= new RelayCommand((o) =>
+                {
+                    if (CurrentEquipment == null) return;
+
+                    try
+                    {
+                        string pathToAd = Config.Settings.PathToAssistant;
+                        if (string.IsNullOrEmpty(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Укажите путь до Assistant.exe в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        if (!File.Exists(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Не удаётся найти файл Assistant.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        string assistantFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AC")?.Value?.Replace(" ", "");
+                        string[] idAndPass = assistantFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string id = string.Empty;
+                        string pass = string.Empty;
+
+                        if (idAndPass?.Length <= 0) return;
+
+                        if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                        if (string.IsNullOrEmpty(id)) return;
+
+                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                        var startInfo = new ProcessStartInfo()
+                        {
+                            FileName = "\"" + pathToAd + "\"",
+                            Arguments = $" -CONNECT:{id}:{pass}",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(startInfo);
+                    }
+                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
+                });
+            }
+        }
+
+        public RelayCommand OpenIIKOOffice
         {
             get
             {
                 return openOffice ??= new RelayCommand((o) =>
                 {
+                    if (CurrentEquipment == null) return;
 
-                    if (CurrentEquipment != null)
+                    try
                     {
-                        string serverInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "srv_addr").Value.Replace(" ", "");
-                        string loginInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "0008").Value.Replace(" ", "");
-                        string[] addressAndPort = serverInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string[] loginAndPassword = loginInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        StartIIKO(loginAndPassword, addressAndPort);
+                        string pathToCLEARbat = Config.Settings.PathToCLEARbat;
+                        if (string.IsNullOrEmpty(pathToCLEARbat))
+                        {
+                            View.MessageBox.Show("Ошибка", "Укажите путь до CLEAR.bat.exe в настройках", MessageBoxButton.OK);
+                            return;
+                        }    
+
+                        if (!File.Exists(pathToCLEARbat))
+                        {
+                            View.MessageBox.Show("Ошибка", "Не удалось найти файл CLEAR.bat.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        string serverInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "srv_addr")?.Value?.Replace(" ", "");
+                        string loginInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "0008")?.Value?.Replace(" ", "");
+                        string[] addressAndPort = serverInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string[] loginAndPassword = loginInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        StartIIKO(pathToCLEARbat, loginAndPassword, addressAndPort);
+
                     }
+                    catch (Exception e) { WriteLog.Error(e.ToString()); }
                 });
             }
         }
 
-        public RelayCommand OpenChain
+        public RelayCommand OpenIIKOChain
         {
             get
             {
                 return openChain ??= new RelayCommand((o) =>
                 {
-                    if (CurrentEquipment != null)
+                    if (CurrentEquipment == null) return;
+
+                    try
                     {
-                        try
+                        string pathToCLEARbat = Config.Settings.PathToCLEARbat;
+                        if (string.IsNullOrEmpty(pathToCLEARbat))
                         {
-                            string serverInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "srv_addr").Value.Replace(" ", ""); // 0017 код атрибута iikoChain
-                            string loginInfo = CurrentEquipment.Parameters.Find(equip => equip.Code == "0008").Value.Replace(" ", "");
-                            string[] addressAndPort = serverInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                            string[] loginAndPassword = loginInfo.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                            StartIIKO(loginAndPassword, addressAndPort);
+                            View.MessageBox.Show("Ошибка", "Укажите путь до CLEAR.bat.exe в настройках", MessageBoxButton.OK);
+                            return;
                         }
-                        catch (Exception e)
+
+                        if (!File.Exists(pathToCLEARbat))
                         {
-                            WriteLog.Error(e.ToString());
+                            View.MessageBox.Show("Ошибка", "Не удалось найти файл CLEAR.bat.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
                         }
+
+                        string serverInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "srv_addr")?.Value?.Replace(" ", ""); // 0017 код атрибута iikoChain
+                        string loginInfo = CurrentEquipment?.Parameters?.Find(equip => equip.Code == "0008")?.Value?.Replace(" ", "");
+                        string[] addressAndPort = serverInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string[] loginAndPassword = loginInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        StartIIKO(pathToCLEARbat, loginAndPassword, addressAndPort);
                     }
+                    catch (Exception e) { WriteLog.Error(e.ToString()); }
                 });
             }
         }
@@ -555,35 +735,26 @@ namespace AqbaApp.ViewModel
 
         #region [Methods]
 
-        static void StartIIKO(string[] loginInfo, string[] serverInfo)
+        static void StartIIKO(string pathToCLEARbat, string[] loginInfo, string[] serverInfo)
         {
-            string pathToCLEARbat = @"""C:\iiko_Distr\CLEAR.bat.exe""";
             string address = string.Empty;
             string port = "443";
             string login = string.Empty;
             string password = string.Empty;
 
-            if (serverInfo.Length <= 0)
-                return;
+            if (serverInfo.Length <= 0) return;
 
-            if (serverInfo[0] != null)
-                address = serverInfo?[0];
+            if (serverInfo[0] != null) address = serverInfo?[0];
 
-            if (serverInfo.Length > 1 && serverInfo[1] != null)
-                port = serverInfo[1];
+            if (serverInfo?.Length > 1 && serverInfo?[1] != null) port = serverInfo[1];
 
-            if (loginInfo.Length >= 0 && loginInfo[0] != null)
-                login = loginInfo?[0];
+            if (loginInfo?.Length >= 0 && loginInfo?[0] != null) login = loginInfo?[0];
 
-            if (loginInfo.Length > 1 && loginInfo[1] != null)
-                password = loginInfo?[1];
+            if (loginInfo?.Length > 1 && loginInfo?[1] != null) password = loginInfo?[1];
 
+            if (string.IsNullOrEmpty(address)) return;
 
-            if (!string.IsNullOrEmpty(address))
-            {
-                string args = $"iiko@{address}:{port}@{login}:{password}";
-                Process.Start($"{pathToCLEARbat}", args);
-            }
+            Process.Start("\"" + pathToCLEARbat + "\"", $"iiko@{address}:{port}@{login}:{password}");
         }
 
         void HideIcons()
@@ -591,6 +762,8 @@ namespace AqbaApp.ViewModel
             AnydeskBtnVisibility = "Collapsed";
             IIKOOfficeBtnVisibility = "Collapsed";
             IIKOChainBtnVisibility = "Collapsed";
+            AmmyAdminBtnVisibility = "Collapsed";
+            AssistantBtnVisibility = "Collapsed";
         }
 
         #endregion

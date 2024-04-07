@@ -15,6 +15,7 @@ namespace AqbaApp.ViewModel
             ButtonAccessibility = false;
             Access = new AccessPage();
             Report = new ReportPage();
+            Settings = new SettingsPage();
             CurrentPage = Report;
             CurWindowState = WindowState.Normal;
             CurWindowStyle = WindowStyle.SingleBorderWindow;
@@ -26,12 +27,14 @@ namespace AqbaApp.ViewModel
         private bool buttonAccessibility;
         private readonly Page Access;
         private readonly Page Report;
+        private readonly Page Settings;
         private Page _currentPage;
         private WindowState _curWindowState;
         private WindowStyle _curWindowStyle;
         private RelayCommand _changeWindow;
         RelayCommand openLoginPage;
         RelayCommand openReportPage;
+        RelayCommand openSettingsPage;
         RelayCommand closingWindow;
         RelayCommand mainWindowLoaded;
 
@@ -87,6 +90,14 @@ namespace AqbaApp.ViewModel
             get
             {
                 return openReportPage ??= new RelayCommand((o) => CurrentPage = Report);
+            }
+        }
+
+        public RelayCommand OpenSettingsPage
+        {
+            get
+            {
+                return openSettingsPage ??= new RelayCommand((o) => CurrentPage = Settings);
             }
         }
 

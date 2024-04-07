@@ -1,12 +1,20 @@
 ﻿using AqbaApp.Model.Authorization;
 using Newtonsoft.Json;
 
-namespace AqbaApp.Model.Server
+namespace AqbaApp.Model.Client
 {
     public class Settings
     {
         [JsonProperty]
         public string ServerAddress { get; set; }
+        [JsonProperty]
+        public string PathToCLEARbat { get; set; }
+        [JsonProperty]
+        public string PathToAnydesk { get; set; }
+        [JsonProperty]
+        public string PathToAmmyAdmin { get; set; }
+        [JsonProperty]
+        public string PathToAssistant { get; set; }
         [JsonProperty]
         public string PathToBackground { get; set; }
         [JsonProperty]

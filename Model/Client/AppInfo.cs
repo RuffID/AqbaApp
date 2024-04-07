@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace AqbaApp.Model.Server
+namespace AqbaApp.Model.Client
 {
     public class AppInfo
     {

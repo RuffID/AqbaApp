@@ -13,7 +13,7 @@ using System.Diagnostics;
 using AqbaApp.API;
 using System.IO;
 using System.Net.Http;
-using AqbaApp.Model.Server;
+using AqbaApp.Model.Client;
 
 namespace AqbaApp.Helper
 {

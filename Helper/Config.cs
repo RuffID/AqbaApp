@@ -1,5 +1,5 @@
 ﻿using AqbaApp.Model.Authorization;
-using AqbaApp.Model.Server;
+using AqbaApp.Model.Client;
 using Newtonsoft.Json;
 using System;
 using System.IO;
