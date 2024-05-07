@@ -6,7 +6,7 @@
         public string Code { get; set; }
         public string Name { get; set; }
         public string Color { get; set; }
-        private bool isChecked = false;
+        private bool isChecked = true;
         public bool IsChecked 
         { 
             get { return isChecked; } 

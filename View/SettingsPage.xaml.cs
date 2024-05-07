@@ -72,5 +72,19 @@ namespace AqbaApp.View
             if (dialog.ShowDialog() == true)
                 (DataContext as SettingsViewModel)?.SaveAssistantPath(dialog.FileName);
         }
+
+        private void SaveRustDeskPath_OnClick(object sender, RoutedEventArgs e)
+        {
+            ArgumentNullException.ThrowIfNull(e);
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Путь до rustdesk.exe",
+                Filter = "RustDesk|*.exe|Любой файл (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+                (DataContext as SettingsViewModel)?.SaveRustDeskPath(dialog.FileName);
+        }
     }
 }

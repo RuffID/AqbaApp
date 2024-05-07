@@ -42,25 +42,56 @@
 
                 <ListView x:Name="openTaskList" ItemsSource="{Binding ActiveEmployees}" BorderThickness="0" Background="Transparent" Margin="5,5,5,5" SizeChanged="OpenTaskList_SizeChanged">
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
+                        <Style TargetType="{x:Type ListViewItem}">
                             <Setter Property="FontFamily" Value="Roboto"/>
+
+                            <Setter Property="Template">
+                                <Setter.Value>
+
+                                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <GridViewRowPresenter Grid.RowSpan="1" 
+                                                                  Margin="{TemplateBinding Padding}" 
+                                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        </Border>
+                                        <!--<Border BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+                                            <GridViewRowPresenter HorizontalAlignment="Stretch" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Width="Auto" Margin="1" Content="{TemplateBinding Content}"/>
+                                        </Border>-->
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter Property="BorderBrush" Value="Blue" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="BorderBrush" Value="Blue"/>
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.View>
-                        <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderTheme}">
+                        <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderTheme}">                            
                             <GridViewColumn Header="ФИО инженера">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding FullName}"
+                                        <TextBlock Text="{Binding FullName}" 
                                                Foreground="{Binding DataContext.FullNameBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}" 
-                                               FontSize="{Binding Path=FullNameFontSize, Source={x:Static namespace:Config.Settings}}"/>
+                                               FontSize="{Binding Path=FullNameFontSize, Source={x:Static namespace:Config.Settings}}">
+                                            <TextBlock.Background>
+                                                <SolidColorBrush Color="Transparent"/>
+                                            </TextBlock.Background>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Решённые">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding SolvedTasks}" 
+                                        <TextBlock Text="{Binding SolvedTasks}"
                                                Foreground="{Binding DataContext.SolvedTasksBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                FontSize="{Binding Path=SolvedTasksFontSize, Source={x:Static namespace:Config.Settings}}"/>
                                     </DataTemplate>
@@ -78,7 +109,7 @@
                             <GridViewColumn Header="Списанное время">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding SpentedTime}" 
+                                        <TextBlock Text="{Binding SpentedTime}"
                                                Foreground="{Binding DataContext.SpendedTimeBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                FontSize="{Binding Path=SpendedTimeFontSize, Source={x:Static namespace:Config.Settings}}"/>
                                     </DataTemplate>
@@ -314,6 +345,7 @@
                     </ControlTemplate>
                 </ToggleButton.Template>
             </ToggleButton>
+
         </Grid>
     </Border>
 

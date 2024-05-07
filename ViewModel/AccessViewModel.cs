@@ -6,6 +6,8 @@ using AqbaApp.API;
 using System;
 using System.Windows;
 using System.IO;
+using AqbaApp.Helper;
+using Notifications.Wpf.Core;
 
 namespace AqbaApp.ViewModel
 {
@@ -35,6 +37,7 @@ namespace AqbaApp.ViewModel
         string iikoChainBtnVisibility = "Collapsed";
         string ammyAdminBtnVisibility = "Collapsed";
         string assistantBtnVisibility = "Collapsed";
+        string rustdeskBtnVisibility = "Collapsed";
         ObservableCollection<Category> categories;
         ObservableCollection<Company> companies;
         ObservableCollection<Company> filteredListOfCompanies;
@@ -54,6 +57,7 @@ namespace AqbaApp.ViewModel
         RelayCommand objectSearch;
         RelayCommand accessPageLoaded;
         RelayCommand openAnydesk;
+        RelayCommand openRustDesk;
         RelayCommand openOffice;
         RelayCommand openChain;
         RelayCommand openAmmyAdmin;
@@ -134,6 +138,7 @@ namespace AqbaApp.ViewModel
                     IIKOChainBtnVisibility = "Collapsed";
                     AmmyAdminBtnVisibility = "Collapsed";
                     AssistantBtnVisibility = "Collapsed";
+                    RustDesktBtnVisibility = "Collapsed";
                 }
                 currentEquipment = value;
                 OnPropertyChanged(nameof(CurrentEquipment));
@@ -210,6 +215,15 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public string RustDesktBtnVisibility
+        {
+            get { return rustdeskBtnVisibility; }
+            set
+            {
+                rustdeskBtnVisibility = value;
+                OnPropertyChanged(nameof(RustDesktBtnVisibility));
+            }
+        }
 
         #endregion
 
@@ -223,6 +237,7 @@ namespace AqbaApp.ViewModel
                     {
                         if (!await Request.GetCategories(Categories))
                             return;
+
                         await Request.GetCompanies(Companies, Categories);
 
                         FilteredListOfCompanies = new ObservableCollection<Company>(Companies);
@@ -393,55 +408,10 @@ namespace AqbaApp.ViewModel
                         if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
                             AssistantBtnVisibility = "Visible";
                         else AssistantBtnVisibility = "Collapsed";
-                    }
-                });
-            }
-        }
 
-        public RelayCommand UpdateEquipment
-        {
-            get
-            {
-                return updateEquipment ??= new RelayCommand( async (o) =>
-                {
-                    if (CurrentEquipment != null)
-                    {
-                        HideIcons();
-                        Equipment updatedEquipment = await Request.GetEquipment(CurrentEquipment.Id);
-
-                        if (updatedEquipment != null)
-                        {
-                            CurrentEquipment = updatedEquipment;
-                            var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();
-                            if (equip != null)
-                            {
-                                int index = Equipments.IndexOf(equip);
-                                if (index >= 0)
-                                    Equipments[index].Replace(updatedEquipment);
-                            }
-                        }
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
-                            AnydeskBtnVisibility = "Visible";
-                        else AnydeskBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
-                        CurrentEquipment.Equipment_kind?.Code != "0010")
-                            IIKOOfficeBtnVisibility = "Visible";
-                        else IIKOOfficeBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
-                        CurrentEquipment.Equipment_kind?.Code == "0010")
-                            IIKOChainBtnVisibility = "Visible";
-                        else IIKOChainBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
-                            AmmyAdminBtnVisibility = "Visible";
-                        else AmmyAdminBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
-                            AssistantBtnVisibility = "Visible";
-                        else AssistantBtnVisibility = "Collapsed";
+                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "rustdesk") != null)
+                            RustDesktBtnVisibility = "Visible";
+                        else RustDesktBtnVisibility = "Collapsed";
                     }
                 });
             }
@@ -608,6 +578,56 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public RelayCommand OpenRustDesk
+        {
+            get
+            {
+                return openRustDesk ??= new RelayCommand((o) =>
+                {
+                    if (CurrentEquipment == null) return;
+
+                    try
+                    {
+                        string pathToAd = Config.Settings.PathToRustDesk;
+                        if (string.IsNullOrEmpty(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Укажите путь до RustDesk.exe в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        if (!File.Exists(pathToAd))
+                        {
+                            View.MessageBox.Show("Ошибка", "Не удалось найти файл RustDesk.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                            return;
+                        }
+
+                        string rustdeskFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "rustdesk")?.Value?.Replace(" ", "");
+                        string[] idAndPass = rustdeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string id = string.Empty;
+                        string pass = string.Empty;
+
+                        if (idAndPass?.Length <= 0) return;
+
+                        if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                        if (string.IsNullOrEmpty(id)) return;
+
+                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                        var startInfo = new ProcessStartInfo()
+                        {
+                            FileName = "\"" + pathToAd + "\"",
+                            Arguments = $" --connect {id} --password {pass}",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(startInfo);
+                    }
+                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
+                });
+            }
+        }
+
         public RelayCommand OpenIIKOOffice
         {
             get
@@ -681,24 +701,58 @@ namespace AqbaApp.ViewModel
         {
             get
             {
-                return updateCompany ??= new RelayCommand(async(o) =>
+                return updateCompany ??= new RelayCommand(async (o) =>
                 {
-                    if (CurrentCompany != null)
+                    if (CurrentCompany == null) return;
+
+                    var info = await Request.GetUpdateInformationForCompany(CurrentCompany.Id);
+
+                    if (info == null)
                     {
-                        Company updatedCompany = await Request.GetCompany(CurrentCompany.Id);
+                        _ = Notice.Show(NotificationType.Information, "Данные по компании не удалось обновить, подробнее в логах", 3);
+                        return;
+                    }
 
-                        if (updatedCompany != null)
+                    CurrentCompany = info.Company;
+
+                    var comp = Companies.Where(e => e.Id == CurrentCompany.Id).FirstOrDefault();
+
+                    if (comp != null)
+                    {
+                        int index = Companies.IndexOf(comp);
+                        if (index >= 0)
+                            Companies[index].Replace(CurrentCompany);
+                    }
+
+                    _ = Notice.Show(NotificationType.Success, "Данные по компании успешно обновлены", 3);
+
+                    if (info.MaintenanceEntity != null && info.MaintenanceEntity.Count > 0)
+                    {
+                        foreach (var me in info.MaintenanceEntity)
                         {
-                            CurrentCompany = updatedCompany;
+                            var maintenance = Objects.Where(e => e.Id == me.Id).FirstOrDefault();
 
-                            var comp = Companies.Where(e => e.Id == updatedCompany.Id).FirstOrDefault();
-                            if (comp != null)
+                            if (maintenance != null)
                             {
-                                int index = Companies.IndexOf(comp);
+                                int index = Objects.IndexOf(maintenance);
                                 if (index >= 0)
-                                    Companies[index].Replace(updatedCompany);
-                            }
+                                    Objects[index].Replace(maintenance);
+                            } // Иначе если объекта не было в списке, значит его добавили и нужно добавить этот объект в список
+                            else Objects.Add(me);
                         }
+                    }
+
+                    if (info.Equipments == null || info.Equipments.Count <= 0) return;
+
+                    CurrentEquipment = null;
+
+                    foreach (var equip in info.Equipments)
+                    {
+                        var equipId = Equipments.Where(e => e.Id == equip.Id).FirstOrDefault();
+
+                        int index = Equipments.IndexOf(equipId);
+                        if (index >= 0)
+                            Equipments[index]= equip;
                     }
                 });
             }
@@ -710,27 +764,103 @@ namespace AqbaApp.ViewModel
             {
                 return updateMaintenanceEntity ??= new RelayCommand(async (o) =>
                 {
-                    if (CurrentMaintenanceEntity != null)
+                    if (CurrentMaintenanceEntity == null) return;
+
+                    var info = await Request.GetUpdateInformationForMaintenanceEntity(CurrentMaintenanceEntity.Id);
+
+                    if (info == null)
                     {
-                        MaintenanceEntity updatedME = await Request.GetMaintenanceEntity(CurrentMaintenanceEntity.Id);
+                        _ = Notice.Show(NotificationType.Information, "Данные по объекту обслуживания не удалось обновить, подробнее в логах", 3);
+                        return;
+                    }
 
-                        if (updatedME != null)
-                        {
-                            CurrentMaintenanceEntity = updatedME;
+                    CurrentMaintenanceEntity = info.MaintenanceEntity.ElementAt(0);
 
-                            var me = Objects.Where(e => e.Id == updatedME.Id).FirstOrDefault();
-                            if (me != null)
-                            {
-                                int index = Objects.IndexOf(me);
-                                if (index >= 0)
-                                    Objects[index].Replace(updatedME);
-                            }
-                        }
+                    var me = Objects.Where(e => e.Id == CurrentMaintenanceEntity.Id).FirstOrDefault();
+
+                    if (me != null)
+                    {
+                        int index = Objects.IndexOf(me);
+                        if (index >= 0)
+                            Objects[index].Replace(CurrentMaintenanceEntity);
+                    }
+
+                    _ = Notice.Show(NotificationType.Success, "Данные по объекту обслуживания успешно обновлены", 3);
+
+                    if (info.Equipments == null || info.Equipments.Count <= 0) return;
+
+                    CurrentEquipment = null;
+
+                    foreach (var equip in info.Equipments)
+                    {
+                        var equipId = Equipments.Where(e => e.Id == equip.Id).FirstOrDefault();
+
+                        int index = Equipments.IndexOf(equipId);
+                        if (index >= 0)
+                            Equipments[index] = equip;
                     }
                 });
             }
         }
 
+        public RelayCommand UpdateEquipment
+        {
+            get
+            {
+                return updateEquipment ??= new RelayCommand( async (o) =>
+                {
+                    if (CurrentEquipment == null) return;
+
+                    HideIcons();
+                    Equipment updatedEquipment = await Request.GetEquipment(CurrentEquipment.Id);
+
+                    if (updatedEquipment == null)
+                    {
+                        _ = Notice.Show(NotificationType.Success, "Данные по оборудованию не удалось обновить, подробнее в логах", 3);
+                        return;
+                    }
+
+                    CurrentEquipment = updatedEquipment;
+                    var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();
+                    if (equip != null)
+                    {
+                        int index = Equipments.IndexOf(equip);
+                        if (index >= 0)
+                            Equipments[index].Replace(updatedEquipment);
+                    }
+
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
+                        AnydeskBtnVisibility = "Visible";
+                    else AnydeskBtnVisibility = "Collapsed";
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
+                    CurrentEquipment.Equipment_kind?.Code != "0010")
+                        IIKOOfficeBtnVisibility = "Visible";
+                    else IIKOOfficeBtnVisibility = "Collapsed";
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
+                    CurrentEquipment.Equipment_kind?.Code == "0010")
+                        IIKOChainBtnVisibility = "Visible";
+                    else IIKOChainBtnVisibility = "Collapsed";
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
+                        AmmyAdminBtnVisibility = "Visible";
+                    else AmmyAdminBtnVisibility = "Collapsed";
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
+                        AssistantBtnVisibility = "Visible";
+                    else AssistantBtnVisibility = "Collapsed";
+
+                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "rustdesk") != null)
+                        RustDesktBtnVisibility = "Visible";
+                    else RustDesktBtnVisibility = "Collapsed";
+
+                    _ = Notice.Show(NotificationType.Success, "Данные по оборудованию успешно обновлены", 3);
+
+                });
+            }
+        }
         #endregion
 
         #region [Methods]
@@ -764,6 +894,7 @@ namespace AqbaApp.ViewModel
             IIKOChainBtnVisibility = "Collapsed";
             AmmyAdminBtnVisibility = "Collapsed";
             AssistantBtnVisibility = "Collapsed";
+            RustDesktBtnVisibility = "Collapsed";
         }
 
         #endregion

@@ -199,6 +199,14 @@
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
+                <Button x:Name="rustdeskLaunch" Background="Transparent" BorderThickness="0" Visibility="{Binding RustDesktBtnVisibility}">
+                    <Image Source="Resources/Icons/rustdesk.ico"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding OpenRustDesk}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System;
 using System.Windows;
 using System.IdentityModel.Tokens.Jwt;
+using Notifications.Wpf.Core;
 
 namespace AqbaApp.Helper
 {
@@ -19,15 +20,20 @@ namespace AqbaApp.Helper
                 if (!await RefreshRefreshToken())
                 {
                     // Если через refresh токен не удалось обновить, то повторная авторизация
-                    if (OpenAuthWindow())
-                        return true;
-                    else return false;
+                    AuthorizationWindow Login = new();
+
+                    while (true)
+                    {
+                        bool? result = Login.ShowDialog();
+                        if (result == null || result == false)
+                            return false;
+                        else if (result == true)
+                            return true;
+                    }
                 }
                 else return true;
             }
             else return true;
-            
-
         }
 
         static async Task<bool> RefreshRefreshToken()
@@ -35,43 +41,43 @@ namespace AqbaApp.Helper
             if (string.IsNullOrEmpty(Config.Settings.Token.RefreshToken))
                 return false;
 
-            AuthenticateResponse response = await Request.RefreshRefreshToken(Config.Settings.Token.RefreshToken);
+            var response = await Request.RefreshRefreshToken(Config.Settings.Token.RefreshToken);
+
+            // Если во время отправки запроса на обновление токена возникла ошибка, то возвращает true, чтобы не выходило окно ввода логина и пароля
+            if (!response.RequestSuccessful)
+            {
+                _ = Notice.Show(NotificationType.Warning, "Не удалось обновить refresh токен.\nПроверьте связь с сервером.");
+                return true;
+            }
 
             // Если обновление ключа произошло с ошибкой
-            if (!TokenIsValid(response))
+            if (!TokenIsValid(response.Response))
                 return false;
 
             // Иначе сохранить данные
-            Config.SaveToken(response);
+            Config.SaveToken(response.Response);
             return true;
-        }
-
-        static bool OpenAuthWindow()
-        {
-            AuthorizationWindow Login = new();
-
-            while (true)
-            {
-                bool? result = Login.ShowDialog();
-                if (result == null || result == false)
-                    return false;
-                else if (result == true)
-                    return true;
-            }
         }
 
         public static async Task<bool> LoginInService(string email, string password)
         {
             var token = await Request.Login(email, password);
 
-            if (!TokenIsValid(token))
+            if (token.RequestSuccessful == false)
             {
-                View.MessageBox.Show("Ошибка", "Не удалось войти", MessageBoxButton.OK);
+                _ = Notice.Show(NotificationType.Warning, "Не удалось отправить запрос на вход.\nПроверьте связь с сервером.");
+                return false;
+            }
+
+            if (!TokenIsValid(token.Response))
+            {
+                View.MessageBox.Show("", "Не удалось войти в систему.\nПроверьте логин или пароль.", MessageBoxButton.OK);
                 return false;
             }
             else
             {
-                Config.SaveToken(token);
+                _ = Notice.Show(NotificationType.Success, "Успешный вход!");
+                Config.SaveToken(token.Response);
                 return true;
             }
         }
@@ -91,8 +97,7 @@ namespace AqbaApp.Helper
             {
                 WriteLog.Error(e.ToString());
                 return false;
-            }
-            
+            }            
 
             if (decodeJWT.ValidTo < DateTime.UtcNow)
                 return false;

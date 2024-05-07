@@ -8,6 +8,7 @@
             PathToAnydesk = Config.Settings.PathToAnydesk;
             PathToAmmyAdmin = Config.Settings.PathToAmmyAdmin;
             PathToAssistant = Config.Settings.PathToAssistant;
+            PathToRustDesk = Config.Settings.PathToRustDesk;
 
             if (string.IsNullOrEmpty(PathToCLEARbat))
             {
@@ -32,6 +33,12 @@
                 PathToAssistant = "C:\\Program Files (x86)\\Ассистент\\assistant.exe";
                 Config.Settings.PathToAssistant = PathToAssistant;
             }
+
+            if (string.IsNullOrEmpty(PathToRustDesk))
+            {
+                PathToRustDesk = "C:\\Program Files\\RustDesk\\rustdesk.exe";
+                Config.Settings.PathToRustDesk = PathToRustDesk;
+            }
         }
 
         #region [Variables]
@@ -40,6 +47,7 @@
         string pathToAnydesk;
         string pathToAmmyAdmin;
         string pathToAssistant;
+        string pathToRustDesk;
 
         #endregion
 
@@ -67,6 +75,12 @@
         {
             get { return pathToAssistant; }
             set { pathToAssistant = value; OnPropertyChanged(nameof(PathToAssistant)); }
+        }
+
+        public string PathToRustDesk
+        {
+            get { return pathToRustDesk; }
+            set { pathToRustDesk = value; OnPropertyChanged(nameof(PathToRustDesk)); }
         }
 
         #endregion
@@ -99,6 +113,13 @@
             if (string.IsNullOrWhiteSpace(path)) return;
             PathToAssistant = path;
             Config.Settings.PathToAssistant = path;
+        }
+
+        public void SaveRustDeskPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+            PathToRustDesk = path;
+            Config.Settings.PathToRustDesk = path;
         }
 
         #endregion

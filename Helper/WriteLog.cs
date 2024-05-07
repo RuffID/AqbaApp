@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿using AqbaApp.Helper;
+using Notifications.Wpf.Core;
+using Serilog;
 
 namespace AqbaApp
 {
@@ -16,6 +18,7 @@ namespace AqbaApp
 
         public static void Error(string exception)
         {
+            _ = Notice.Show(NotificationType.Error, exception);
             Log.Error(exception);
         }
 

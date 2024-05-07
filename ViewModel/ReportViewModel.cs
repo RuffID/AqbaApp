@@ -25,16 +25,10 @@ namespace AqbaApp.ViewModel
             CheckedStatuses = [];
             CheckedPriorities = [];
             CheckedTypes = [];
-            LoadConfig();
+            LoadConfig();            
 
-            timer = new(DispatcherPriority.Render)
-            {
-                Interval = TimeSpan.FromSeconds(300)
-            };
-            timer.Tick += async (sender, args) =>
-            {                
-                await GetPerformance();
-            };
+            timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromSeconds(300) };
+            timer.Tick += async (sender, args) => await GetPerformance(requestType: "auto");
         }
 
         #region [Variables]
@@ -63,8 +57,6 @@ namespace AqbaApp.ViewModel
         RelayCommand getOpenTasks;
         RelayCommand checkedGroup;
         RelayCommand checkedOpenTasks;
-        RelayCommand checkedType;
-        RelayCommand checkedPriority;
         RelayCommand leftClickStatusSelectButton;
         RelayCommand rigthClickStatusSelectButton;
         RelayCommand leftClickTypeSelectButton;
@@ -285,9 +277,7 @@ namespace AqbaApp.ViewModel
                 return reportPageLoaded ??= new RelayCommand((o) =>
                 {
                     if (Config.Settings.ElectronicQueueMode)
-                    {
                         timer.Start();
-                    }
                 });
             }
         }
@@ -298,7 +288,7 @@ namespace AqbaApp.ViewModel
             {
                 return getOpenTasks ??= new RelayCommand(async (o) =>
                 {
-                    await GetPerformance("manual");
+                    await GetPerformance(requestType: "manual");
                 });
             }
         }
@@ -447,6 +437,7 @@ namespace AqbaApp.ViewModel
 
         #region [Methods]
 
+        #region [Config Methods]
         void LoadConfig()
         {
             if (Config.Settings.CheckedGroups != null && Config.Settings.CheckedGroups.Length != 0)
@@ -595,15 +586,17 @@ namespace AqbaApp.ViewModel
             }
         }
 
-        async Task CheckDictionaries()
+        #endregion
+
+        async Task<bool> CheckDictionaries()
         {
             if (Employees?.Count <= 0)
             {
-                var temp = (await Request.GetEmployees())?.ToList();
+                var temp = await Request.GetEmployees();
                 if (temp == null || temp.Count == 0)
                 {
                     GettingTaskInRun = true;
-                    return;
+                    return false;
                 }
                 Employees = temp;
             }
@@ -613,9 +606,9 @@ namespace AqbaApp.ViewModel
                 if (!await Request.GetGroups(Groups))
                 {
                     GettingTaskInRun = true;
-                    return;
+                    return false;
                 }
-                if (CheckedGroups != null && CheckedGroups.Count <= 0)
+                if (CheckedGroups.Count <= 0)
                     SaveCheckedGroups();
                 else LoadCheckedGroups();
             }
@@ -625,9 +618,9 @@ namespace AqbaApp.ViewModel
                 if (!await Request.GetStatuses(TaskStatuses))
                 {
                     GettingTaskInRun = true;
-                    return;
+                    return false;
                 }
-                if (TaskStatuses != null && TaskStatuses.Count <= 0)
+                if (TaskStatuses.Count <= 0)
                     SaveCheckedStatuses();
                 else LoadCheckedStatuses();
             }
@@ -637,9 +630,9 @@ namespace AqbaApp.ViewModel
                 if (!await Request.GetTypes(TaskTypes))
                 {
                     GettingTaskInRun = true;
-                    return;
+                    return false;
                 }
-                if (TaskTypes != null && TaskTypes.Count <= 0)
+                if (TaskTypes.Count <= 0)
                     SaveCheckedTypes();
                 else LoadCheckedTypes();
             }
@@ -649,15 +642,17 @@ namespace AqbaApp.ViewModel
                 if (!await Request.GetPriorities(Priorities))
                 {
                     GettingTaskInRun = true;
-                    return;
+                    return false;
                 }
-                if (Priorities != null && Priorities.Count <= 0)
+                if (Priorities.Count <= 0)
                     SaveCheckedPriorities();
                 else LoadCheckedPriorities();
             }
+
+            return true;
         }
 
-        async Task GetPerformance(string requestType = "auto")
+        async Task GetPerformance(string requestType)
         {
             timer.Start();
             GettingTaskInRun = false;
@@ -667,17 +662,29 @@ namespace AqbaApp.ViewModel
                 SelectedDateFrom = DateTime.Now;
             }
 
-            await CheckDictionaries();
-            SetOpenStatus();
-
-            if (Employees?.Count > 0 && Groups.Count > 0 && TaskTypes.Count > 0 && Priorities.Count > 0 && TaskStatuses.Count > 0)
+            // Если при проверке номенклатуры произошёл сбой и не был найден один из списков, то завершает метод
+            if (!await CheckDictionaries())
             {
-                await Request.GetEmployeePerformance(Employees, SelectedDateFrom, SelectedDateTo, requestType);
-
-                CheckGroup();
-                CheckOpenTasks();
-                SortEmployees();                
+                GettingTaskInRun = true;
+                return;
             }
+
+            if (Employees?.Count <= 0 && Groups.Count <= 0 && TaskTypes.Count <= 0 && Priorities.Count <= 0 && TaskStatuses.Count <= 0)
+            {
+                GettingTaskInRun = true;
+                return;
+            }
+
+            if (!await Request.GetEmployeePerformance(Employees, SelectedDateFrom, SelectedDateTo, requestType))
+            {
+                GettingTaskInRun = true;
+                return;
+            }
+
+            CheckGroup();
+            CheckOpenTasks();
+            SortEmployees();
+
             LastUpdateTime = await Request.GetLastUpdateTime();
             GettingTaskInRun = true;
         }
@@ -748,22 +755,7 @@ namespace AqbaApp.ViewModel
                     employee.OpenTasks += (int)count;
             }
         }
-
-        void SetOpenStatus()
-        {
-            foreach (var status in TaskStatuses)
-            {
-                switch (status.Code)
-                {
-                    case "opened":
-                        status.IsChecked = true; break;
-                    case "completed_outdor":
-                        status.IsChecked = true; break;
-                    case "injob":
-                        status.IsChecked = true; break;
-                }
-            }            
-        }
+                
 
         #endregion
     }

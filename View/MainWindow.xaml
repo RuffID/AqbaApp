@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:AqbaApp.ViewModel"
+      xmlns:notifications="clr-namespace:Notifications.Wpf.Core.Controls;assembly=Notifications.Wpf.Core"        
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         Title="AqbaApp" Height="800" MinHeight="450" Width="1300" MinWidth="500"
@@ -63,9 +64,8 @@
             </Grid>
         </Border>
 
-
-
         <Frame Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden" Content="{Binding CurrentPage}"/>
+        <notifications:NotificationArea MaxItems="5" x:Name="NotificationWindowArea" Position="TopRight" Grid.Column="1"/>
     </Grid>
 
 </Window>

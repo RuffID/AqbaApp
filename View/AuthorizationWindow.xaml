@@ -16,13 +16,6 @@
         <vm:AuthorizationViewModel/>
     </Window.DataContext>
 
-    <!--<i:Interaction.Triggers>
-        <i:EventTrigger EventName="Loaded">
-            <i:InvokeCommandAction Command="{Binding AuthorizationWindowLoaded}"
-                               CommandParameter="{Binding ElementName=Authorization}"/>
-        </i:EventTrigger>
-    </i:Interaction.Triggers>-->
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>

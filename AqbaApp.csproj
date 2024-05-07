@@ -8,7 +8,7 @@
     <ApplicationIcon>View\Resources\Icons\AB_favicon-04.ico</ApplicationIcon>
     <Platforms>AnyCPU;x86</Platforms>
 	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-	<Version>1.1</Version>
+	<Version>1.3</Version>
 	<Authors>(c) 118 / 75</Authors>
 	<Copyright>(с) 118 / 75</Copyright>
   </PropertyGroup>
@@ -36,6 +36,7 @@
     <None Remove="View\Resources\Icons\password.png" />
     <None Remove="View\Resources\Icons\refresh.png" />
     <None Remove="View\Resources\Icons\report.png" />
+    <None Remove="View\Resources\Icons\rustdesk.ico" />
     <None Remove="View\Resources\Icons\settings.png" />
     <None Remove="View\Resources\iikoChain_icon.ico" />
     <None Remove="View\Resources\iikoOffice_icon.ico" />
@@ -46,12 +47,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.1" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Notifications.Wpf.Core" Version="1.4.1" />
     <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -67,6 +69,7 @@
     <Resource Include="View\Resources\Icons\password.png" />
     <Resource Include="View\Resources\Icons\refresh.png" />
     <Resource Include="View\Resources\Icons\report.png" />
+    <Resource Include="View\Resources\Icons\rustdesk.ico" />
     <Resource Include="View\Resources\Icons\settings.png" />
   </ItemGroup>
 

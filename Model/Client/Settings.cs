@@ -16,6 +16,8 @@ namespace AqbaApp.Model.Client
         [JsonProperty]
         public string PathToAssistant { get; set; }
         [JsonProperty]
+        public string PathToRustDesk { get; set; }
+        [JsonProperty]
         public string PathToBackground { get; set; }
         [JsonProperty]
         public int HeaderFontSize { get; set; }

@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Net.WebRequestMethods;
-using System.Windows.Input;
 using System.Windows;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -14,6 +8,7 @@ using AqbaApp.API;
 using System.IO;
 using System.Net.Http;
 using AqbaApp.Model.Client;
+using Notifications.Wpf.Core;
 
 namespace AqbaApp.Helper
 {
@@ -23,6 +18,7 @@ namespace AqbaApp.Helper
         static AppInfo appInfo;
         static string linkDownload;
         static string linkVersion;
+        static readonly string message = "Не удалось получить актуальную версию приложения.";
         static readonly SocketsHttpHandler socketsHandler = new()
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
@@ -36,12 +32,8 @@ namespace AqbaApp.Helper
 
         public static async Task<bool> CheckUpdate()
         {
-            await UpdateAppInfo(linkVersion);
-            if (appInfo == null)
-            {
-                WriteLog.Warn("Failed to get application version");
+            if (!await UpdateAppInfo(linkVersion))
                 return false;
-            }
 
             if (Convert.ToDouble(Immutable.curVer, CultureInfo.InvariantCulture) < Convert.ToDouble(AppInfo.Version, CultureInfo.InvariantCulture))
             {
@@ -64,15 +56,27 @@ namespace AqbaApp.Helper
             return true;
         }
 
-        static async Task UpdateAppInfo(string linkVersion)
+        static async Task<bool> UpdateAppInfo(string linkVersion)
         {
+
+            var info = await GetResponse(linkVersion);
+
+            if (info.RequestSuccessful == false)
+            {
+                _ = Notice.Show(NotificationType.Warning, message);
+                return false;
+            }
+
             try
             {
-                var info = await GetResponse(linkVersion);
-                if (!string.IsNullOrEmpty(info))
-                    appInfo = JsonConvert.DeserializeObject<AppInfo>(info);
+                if (!string.IsNullOrEmpty(info.Response))
+                {
+                    appInfo = JsonConvert.DeserializeObject<AppInfo>(info.Response);
+                    return true;
+                }
+                return false;
             }
-            catch (Exception e) { WriteLog.Error(e.ToString()); }
+            catch (Exception e) { WriteLog.Error(e.ToString()); return false; }
         }
 
         static async Task<bool> DownloadFile(string link, string filePath)
@@ -112,20 +116,22 @@ namespace AqbaApp.Helper
             Process.Start(startInfo);
         }
 
-        static async Task<string> GetResponse(string link)
+        static async Task<(bool RequestSuccessful, string Response)> GetResponse(string link)
         {
             try
             {
                 HttpClient httpClient = new(socketsHandler);
                 using HttpResponseMessage response = await httpClient.GetAsync(link);
-                if (!response.IsSuccessStatusCode)
-                    return null;
-                else return await response.Content.ReadAsStringAsync();
+                if (response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+                    return (false, null);
+                else if (!response.IsSuccessStatusCode)
+                    return (true, null);
+                else return (true, await response.Content.ReadAsStringAsync());
             }
             catch (Exception e)
             {
-                WriteLog.Warn(e.ToString());
-                return null;
+                WriteLog.Warn(message + "\n" + e.ToString());
+                return (false, null);
             }
         }
     }
