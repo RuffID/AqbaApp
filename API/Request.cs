@@ -12,6 +12,8 @@ using AqbaApp.Model.OkdeskReport;
 using System.Collections.Generic;
 using System.IO;
 using Notifications.Wpf.Core;
+using AqbaApp.Interfaces;
+using System.Linq;
 
 namespace AqbaApp.API
 {
@@ -23,13 +25,11 @@ namespace AqbaApp.API
             PooledConnectionLifetime = TimeSpan.FromMinutes(2),
         };
 
-        static readonly string serverAddress;
+        static readonly string serverAddress = "http://127.0.0.1";
 
         static Request()
         {
-            if (string.IsNullOrEmpty(Config.Settings.ServerAddress))
-                serverAddress = "http://127.0.0.1";
-            else 
+            if (!string.IsNullOrEmpty(Config.Settings.ServerAddress))
                 serverAddress = Config.Settings.ServerAddress;
         }
 
@@ -199,141 +199,63 @@ namespace AqbaApp.API
             catch (Exception e) { WriteLog.Error($"{e}"); }
         }
 
-        public static async Task<List<Employee>> GetEmployees()
+        public static async Task<ICollection<T>> GetCollectionFromAPI<T>(string apiEndpoint)
         {
-            List<Employee> employees = [];
-            int lastEmployeeId = 0;
-            Employee[] employeeTemp;
-
+            ICollection<T> collection = [];
+            int lastItemId = 0;
 
             while (true)
             {
-                var response = await GetResponse($"{serverAddress}/employee?employeeId={lastEmployeeId}");
+                var response = await GetResponse($"{serverAddress}/{apiEndpoint}?id={lastItemId}");
 
                 if (response.RequestSuccessful == false)
-                    _ = Notice.Show(NotificationType.Warning, "Не удалось получить список сотрудников.\nПроверьте связь с сервером.");
+                    _ = Notice.Show(NotificationType.Warning, $"Не удалось получить коллекцию ({apiEndpoint}).\nПроверьте связь с сервером.");
 
                 if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") break;
 
                 try
                 {
-                    employeeTemp = JsonConvert.DeserializeObject<Employee[]>(response.Response);
+                    var collectionFromAPI = JsonConvert.DeserializeObject<T[]>(response.Response);
 
-                    if (employeeTemp.Length > 0)
-                        lastEmployeeId = employeeTemp[employeeTemp.Length - 1].Id + 1;
+                    if (collectionFromAPI.Length > 0)
+                        lastItemId = (collectionFromAPI.Last() as IEntity).Id + 1;
+                    else break;
 
                     // Если получен не пустой список, то добавляет поочерёдно каждую компанию в список
-                    foreach (var emp in employeeTemp)
-                        employees.Add(emp);
+                    foreach (var item in collectionFromAPI)
+                        collection.Add(item);
                 }
                 catch (Exception e) { WriteLog.Error($"{e}"); }
             }
 
-            return employees;
-        }
+            return collection;
+        }   
 
-        public static async Task<bool> GetGroups(ObservableCollection<Group> groups)
+        public static async Task<ICollection<T>> GetDictionaries<T>(string apiEndpoint)
         {
-            groups.Clear();
-            Group[] group;
-
-            var response = await GetResponse($"{serverAddress}/group");
+            var response = await GetResponse($"{serverAddress}/{apiEndpoint}");
 
             if (response.RequestSuccessful == false)
-                _ = Notice.Show(NotificationType.Warning, "Не удалось получить список групп.\nПроверьте связь с сервером.");
+                _ = Notice.Show(NotificationType.Warning, $"Не удалось получить справочники ({apiEndpoint}).\nПроверьте связь с сервером.");
 
-            if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return false;
+            if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return null;
             try
             {
-                group = JsonConvert.DeserializeObject<Group[]>(response.Response);
-
-                foreach (var gr in group)
-                    groups.Add(gr);
-
-                return true;
+                return JsonConvert.DeserializeObject<T[]>(response.Response);
             }
-            catch (Exception e) { WriteLog.Error($"{e}"); return false; }
-        }
-
-        public static async Task<bool> GetStatuses(ObservableCollection<Status> statuses)
-        {
-            statuses.Clear();
-            Status[] status;
-
-            var response = await GetResponse($"{serverAddress}/issueStatus");
-
-            if (response.RequestSuccessful == false)
-                _ = Notice.Show(NotificationType.Warning, "Не удалось получить список статусов заявок.\nПроверьте связь с сервером.");
-
-            if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return false;
-            try
-            {
-                status = JsonConvert.DeserializeObject<Status[]>(response.Response);
-
-                foreach (var st in status)
-                    statuses.Add(st);
-
-                return true;
-            }
-            catch (Exception e) { WriteLog.Error(e.ToString()); return false; }
-        }
-
-        public static async Task<bool> GetTypes(ObservableCollection<TaskType> types)
-        {
-            types.Clear();
-            TaskType[] type;
-
-            var response = await GetResponse($"{serverAddress}/issueType");
-
-            if (response.RequestSuccessful == false)
-                _ = Notice.Show(NotificationType.Warning, "Не удалось получить список типов заявок.\nПроверьте связь с сервером.");
-
-            if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return false;
-            try
-            {
-                type = JsonConvert.DeserializeObject<TaskType[]>(response.Response);
-
-                foreach (var tp in type)
-                    types.Add(tp);
-
-                return true;
-            }
-            catch (Exception e) { WriteLog.Error(e.ToString()); return false; }
-        }
-
-        public static async Task<bool> GetPriorities(ObservableCollection<Priority> priorities)
-        {
-            priorities.Clear();
-            Priority[] priority;
-
-            var response = await GetResponse($"{serverAddress}/issuePriority");
-
-            if (response.RequestSuccessful == false)
-                _ = Notice.Show(NotificationType.Warning, "Не удалось получить список приоритетов заявок.\nПроверьте связь с сервером.");
-
-            if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return false;
-            try
-            {
-                priority = JsonConvert.DeserializeObject<Priority[]>(response.Response);
-
-                foreach (var pt in priority)
-                    priorities.Add(pt);
-
-                return true;
-            }
-            catch (Exception e) { WriteLog.Error(e.ToString()); return false; }
+            catch (Exception e) { WriteLog.Error(e.ToString()); return null; }
         }
 
         public static async Task<bool> GetEmployeePerformance(List<Employee> employees, DateTime dateFrom, DateTime dateTo, string requestType)
         {
             foreach (var emp in employees)
             {
-                emp.SolvedTasks = 0;
-                emp.SpentedTimeDouble = 0;
+                emp.SolvedIssues = 0;
+                emp.SpentedTime = 0;
                 emp.Issues = [];
             }
 
-            EmployeePerformance[] employeePerformanceList;
+            Employee[] employeePerformanceList;
 
             var response = await GetResponse(
                 $"{serverAddress}/employeePerformance/list?requestType={requestType}&dateFrom={dateFrom:yyyy.MM.dd}&dateTo={dateTo:yyyy.MM.dd}");
@@ -344,15 +266,18 @@ namespace AqbaApp.API
             if (string.IsNullOrEmpty(response.Response) || response.Response == "[]") return false;
             try
             {
-                employeePerformanceList = JsonConvert.DeserializeObject<EmployeePerformance[]>(response.Response);
+                employeePerformanceList = JsonConvert.DeserializeObject<Employee[]>(response.Response);
 
                 foreach (var emp in employeePerformanceList)
                 {
-                    var e = employees?.Find(e => e.Id == emp.Id);    // Поиск сотрудника по id из общего списка который был загружен ранее
-                    int index = employees.IndexOf(e);   // Получение id сотрудника
+                    Employee employee = employees?.Find(e => e.Id == emp.Id);    // Поиск сотрудника по id из общего списка который был загружен ранее
+                    if (employee == null) continue;
+                    
+                    int index = employees.IndexOf(employee);   // Получение id сотрудника
                     if (index == -1) continue;
-                    employees[index].SolvedTasks = emp.SolvedTasks; // Назначает решённые задачи и списанное время по id
-                    employees[index].SpentedTimeDouble = emp.SpentedTime;
+
+                    employees[index].SolvedIssues = emp.SolvedIssues; // Назначает решённые задачи и списанное время по id
+                    employees[index].SpentedTime = emp.SpentedTime;
                     employees[index].Issues = emp.Issues;
                 }
                 return true;
@@ -371,7 +296,6 @@ namespace AqbaApp.API
             try
             {
                 return JsonConvert.DeserializeObject<Equipment>(response.Response);
-
             }
             catch (Exception e) { WriteLog.Error(e.ToString()); return null; }
         }
@@ -477,6 +401,8 @@ namespace AqbaApp.API
                 using HttpResponseMessage response = await httpClient.GetAsync(link);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+                    return (false, null);
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     return (false, null);
                 else if (!response.IsSuccessStatusCode)
                     return (true, null);

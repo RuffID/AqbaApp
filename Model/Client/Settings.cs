@@ -1,9 +1,10 @@
-﻿using AqbaApp.Model.Authorization;
+﻿using AqbaApp.Interfaces;
+using AqbaApp.Model.Authorization;
 using Newtonsoft.Json;
 
 namespace AqbaApp.Model.Client
 {
-    public class Settings
+    public class Settings : IConfig
     {
         [JsonProperty]
         public string ServerAddress { get; set; }
@@ -38,23 +39,31 @@ namespace AqbaApp.Model.Client
         [JsonProperty]
         public string SolvedTasksBackgroundColor { get; set; }
         [JsonProperty]
-        public string OpenTasksBackgroundColor { get; set; }
-        [JsonProperty]
-        public string[] CheckedGroups { get; set; }
-        [JsonProperty]
-        public string[] CheckedStatuses { get; set; }
-        [JsonProperty]
-        public string[] CheckedTypes { get; set; }
-        [JsonProperty]
-        public string[] CheckedPriorities { get; set; }
+        public string OpenTasksBackgroundColor { get; set; }        
         [JsonProperty]
         public bool ElectronicQueueMode { get; set; }
         [JsonProperty]
+        public bool HideEmployeesWithoutSolvedIssues { get; set; }
+        [JsonProperty]
+        public bool HideEmployeesWithoutWrittenOffTime { get; set; }
+        [JsonProperty]
+        public bool HideEmployeesWithoutOpenIssues { get; set; }
+        [JsonProperty]
         public AuthenticateResponse Token { get; set; }
+
+        [JsonIgnore]
+        public Formatting Formatting { get; set; }
+        [JsonIgnore]
+        public string PathToFile { get; set; }
+        [JsonIgnore]
+        public string PathToFolder { get; set; }
 
         public Settings()
         {
             Token = new AuthenticateResponse();
+            Formatting = Formatting.Indented;
+            PathToFolder = Immutable.configFolderName;
+            PathToFile = Immutable.configPath;
         }
     }
 }

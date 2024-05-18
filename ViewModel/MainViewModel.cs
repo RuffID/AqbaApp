@@ -1,7 +1,4 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using AqbaApp.Helper;
 using AqbaApp.View;
@@ -12,6 +9,7 @@ namespace AqbaApp.ViewModel
     {
         public MainViewModel()
         {
+            //Config.Start();
             ButtonAccessibility = false;
             Access = new AccessPage();
             Report = new ReportPage();
@@ -127,7 +125,8 @@ namespace AqbaApp.ViewModel
             {
                 return closingWindow ??= new RelayCommand((o) =>
                 {
-                    Config.SaveOrCreateConfig();
+                    Config.SaveOrCreateConfig(ref Config.Settings);
+                    Config.SaveOrCreateConfig(ref Config.Cache);
                 });
             }
         }

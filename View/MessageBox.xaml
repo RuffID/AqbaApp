@@ -22,7 +22,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBox Grid.Row="0" Name="MessageContainer"  TextWrapping="Wrap" Margin="10" FontSize="15" FontFamily="Roboto" TextAlignment="Center" VerticalAlignment="Center" Foreground="Black" Background="Transparent" BorderThickness="0" IsReadOnly="True"/>
+        <TextBox Grid.Row="0" Name="MessageContainer"  TextWrapping="Wrap" Margin="10" FontSize="15" FontFamily="Roboto" TextAlignment="Center" VerticalAlignment="Center" Foreground="Black" Background="Transparent" BorderThickness="0" IsReadOnly="True" VerticalScrollBarVisibility="Visible"/>
 
         <StackPanel Name="ButtonContainer" Grid.Row="1" Orientation="Horizontal"
                     HorizontalAlignment="Center" Margin="10">

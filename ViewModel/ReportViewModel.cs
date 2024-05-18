@@ -1,8 +1,13 @@
 ﻿using AqbaApp.API;
+using AqbaApp.Dto;
+using AqbaApp.Interfaces;
 using AqbaApp.Model.OkdeskReport;
+using AqbaServer.Models.OkdeskPerformance;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -21,12 +26,12 @@ namespace AqbaApp.ViewModel
             TaskTypes = [];
             Priorities = [];
             Groups = [];
-            CheckedGroups = [];
-            CheckedStatuses = [];
-            CheckedPriorities = [];
-            CheckedTypes = [];
-            LoadConfig();            
-
+            GroupEmployeeConnections = [];
+            Priorities.CollectionChanged += OnCollectionChanged;
+            TaskStatuses.CollectionChanged += OnCollectionChanged;
+            TaskTypes.CollectionChanged += OnCollectionChanged;
+            Groups.CollectionChanged += OnCollectionChanged;
+            LoadConfig();
             timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromSeconds(300) };
             timer.Tick += async (sender, args) => await GetPerformance(requestType: "auto");
         }
@@ -41,18 +46,17 @@ namespace AqbaApp.ViewModel
         string lastUpdateTime;
         readonly DispatcherTimer timer;
         bool gettingTaskInRun = true;
+        bool hideUselessEmployees;
+        bool hideWithoutWrittenOffTime;
+        bool hideEmployeesWithoutOpenIssues;
         string pathToBackground;
-        List<string> checkedGroups;
-        List<string> checkedTypes;
-        List<string> checkedStatuses;
-        List<string> checkedPriorities;
         DateTime selectedDateFrom;
         DateTime selectedDateTo;
         ObservableCollection<Employee> activeEmployees;
-        ObservableCollection<Status> taskStatuses;
-        ObservableCollection<Group> groups;
-        ObservableCollection<TaskType> taskTypes;
-        ObservableCollection<Priority> priorities;
+        ObservableCollection<IOkdeskDictionary> groups;
+        ObservableCollection<IOkdeskDictionary> taskStatuses;
+        ObservableCollection<IOkdeskDictionary> taskTypes;
+        ObservableCollection<IOkdeskDictionary> priorities;
         RelayCommand reportPageLoaded;
         RelayCommand getOpenTasks;
         RelayCommand checkedGroup;
@@ -70,27 +74,9 @@ namespace AqbaApp.ViewModel
 
         #region [Collections]
 
-        List<Employee> Employees { get; set; }
+        private ICollection<GroupEmployee> GroupEmployeeConnections { get; set; }
 
-        public List<string> CheckedGroups
-        {
-            get { return checkedGroups; }
-            set
-            {
-                checkedGroups = value;
-                OnPropertyChanged(nameof(CheckedGroup));
-            }
-        }
-
-        public ObservableCollection<Group> Groups
-        {
-            get { return groups; }
-            set
-            {
-                groups = value;
-                OnPropertyChanged();
-            }
-        }
+        private List<Employee> Employees { get; set; }
 
         public ObservableCollection<Employee> ActiveEmployees
         {
@@ -102,65 +88,13 @@ namespace AqbaApp.ViewModel
             }
         }
 
-        public ObservableCollection<Status> TaskStatuses
-        {
-            get { return taskStatuses; }
-            set
-            {
-                taskStatuses = value;
-                OnPropertyChanged();                
-            }
-        }
+        public ObservableCollection<IOkdeskDictionary> TaskStatuses { get; set; }
 
-        public List<string> CheckedStatuses
-        {
-            get { return checkedStatuses; }
-            set
-            {
-                checkedStatuses = value;
-                OnPropertyChanged(nameof(CheckedStatuses));
-            }
-        }
+        public ObservableCollection<IOkdeskDictionary> TaskTypes { get; set; }
 
-        public ObservableCollection<TaskType> TaskTypes
-        {
-            get { return taskTypes; }
-            set
-            {
-                taskTypes = value;
-                OnPropertyChanged();
-            }
-        }
+        public ObservableCollection<IOkdeskDictionary> Priorities {  get; set; }
 
-        public List<string> CheckedTypes
-        {
-            get { return checkedTypes; }
-            set
-            {
-                checkedTypes = value;
-                OnPropertyChanged(nameof(CheckedTypes));
-            }
-        }
-
-        public ObservableCollection<Priority> Priorities
-        {
-            get { return priorities; }
-            set
-            {
-                priorities = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public List<string> CheckedPriorities
-        {
-            get { return checkedPriorities; }
-            set
-            {
-                checkedPriorities = value;
-                OnPropertyChanged(nameof(CheckedPriorities));
-            }
-        }
+        public ObservableCollection<IOkdeskDictionary> Groups {  get; set; }
 
         public DateTime SelectedDateFrom
         {
@@ -267,6 +201,45 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public bool HideEmployeesWithoutSolvedIssues
+        {
+            get { return hideUselessEmployees; }
+            set
+            {
+                hideUselessEmployees = value;
+                Config.Settings.HideEmployeesWithoutSolvedIssues = value;
+                OnPropertyChanged(nameof(HideEmployeesWithoutSolvedIssues));
+                CheckGroup();
+                SortEmployees();
+            }
+        }
+
+        public bool HideEmployeesWithoutWrittenOffTime
+        {
+            get { return hideWithoutWrittenOffTime; }
+            set
+            {
+                hideWithoutWrittenOffTime = value;
+                Config.Settings.HideEmployeesWithoutWrittenOffTime = value;
+                OnPropertyChanged(nameof(HideEmployeesWithoutWrittenOffTime));
+                CheckGroup();
+                SortEmployees();
+            }
+        }
+
+        public bool HideEmployeesWithoutOpenIssues
+        {
+            get { return hideEmployeesWithoutOpenIssues; }
+            set
+            {
+                hideEmployeesWithoutOpenIssues = value;
+                Config.Settings.HideEmployeesWithoutOpenIssues = value;
+                OnPropertyChanged(nameof(HideEmployeesWithoutOpenIssues));
+                CheckGroup();
+                SortEmployees();
+            }
+        }
+
         #endregion
 
         #region [Commands]
@@ -274,10 +247,13 @@ namespace AqbaApp.ViewModel
         {
             get
             {
-                return reportPageLoaded ??= new RelayCommand((o) =>
+                return reportPageLoaded ??= new RelayCommand(async (o) =>
                 {
                     if (Config.Settings.ElectronicQueueMode)
+                    {
+                        await CheckDictionaries();
                         timer.Start();
+                    }
                 });
             }
         }
@@ -301,7 +277,7 @@ namespace AqbaApp.ViewModel
                 {
                     CheckGroup(); // Проверка выделенных групп
                     SortEmployees(); // Сортировка сотрудников
-                    SaveCheckedGroups(); // Сохранение выделенных групп в конфиг                    
+                    //SaveCheckedGroups(); // Сохранение выделенных групп в конфиг                    
                 });
             }
         }
@@ -314,9 +290,8 @@ namespace AqbaApp.ViewModel
                 {
                     CheckOpenTasks(); // Проверка открытых заявок
                     SortEmployees(); // Сортировка сотрудников
-                    SaveCheckedStatuses(); // Сохранение выделенных статусов в конфиг
-                    SaveCheckedPriorities();
-                    SaveCheckedTypes();
+                    //SaveCheckedStatuses(); // Сохранение выделенных статусов в конфиг
+                    //SaveCheckedTypes();
                 });
             }
         }
@@ -437,20 +412,29 @@ namespace AqbaApp.ViewModel
 
         #region [Methods]
 
-        #region [Config Methods]
         void LoadConfig()
         {
-            if (Config.Settings.CheckedGroups != null && Config.Settings.CheckedGroups.Length != 0)
-                CheckedGroups = Config.Settings.CheckedGroups.ToList();
+            if (Config.Cache.Groups != null)
+                foreach (var group in Config.Cache.Groups)
+                    Groups.Add(new Group(group));
 
-            if (Config.Settings.CheckedStatuses != null && Config.Settings.CheckedStatuses.Length != 0)
-                CheckedStatuses = Config.Settings.CheckedStatuses.ToList();
+            if (Config.Cache.Statuses != null)
+                foreach (var status in Config.Cache.Statuses)
+                    TaskStatuses.Add(new Status(status));
 
-            if (Config.Settings.CheckedTypes != null && Config.Settings.CheckedTypes.Length != 0)
-                CheckedTypes = Config.Settings.CheckedTypes.ToList();
+            if (Config.Cache.Types != null)
+                foreach (var type in Config.Cache.Types)
+                    TaskTypes.Add(new TaskType(type));
 
-            if (Config.Settings.CheckedPriorities != null && Config.Settings.CheckedPriorities.Length != 0)
-                CheckedPriorities = Config.Settings.CheckedPriorities.ToList();
+            if (Config.Cache.Priorities != null)
+                foreach (var priority in Config.Cache.Priorities) 
+                    Priorities.Add(new Priority(priority));
+
+            HideEmployeesWithoutSolvedIssues = Config.Settings.HideEmployeesWithoutSolvedIssues;
+
+            HideEmployeesWithoutWrittenOffTime = Config.Settings.HideEmployeesWithoutWrittenOffTime;
+
+            HideEmployeesWithoutOpenIssues = Config.Settings.HideEmployeesWithoutOpenIssues;
 
             if (string.IsNullOrEmpty(Config.Settings.PathToBackground))
                 PathToBackground = "View/Resources/Background/White.png";
@@ -496,215 +480,126 @@ namespace AqbaApp.ViewModel
         {
             PathToBackground = path;
             Config.Settings.PathToBackground = PathToBackground;
-        }        
-
-        public void SaveCheckedGroups()
-        {
-            CheckedGroups?.Clear();
-
-            foreach(var group in Groups)
-                if (group.IsChecked)
-                    CheckedGroups.Add(group.Name);
-
-            Config.Settings.CheckedGroups = CheckedGroups.ToArray();
-        }
-
-        void LoadCheckedGroups()
-        {
-            if (Config.Settings.CheckedGroups != null && Config.Settings.CheckedGroups.Length != 0)
-            {
-                foreach (var group in Groups)
-                    if (Config.Settings.CheckedGroups.Contains(group.Name))
-                        group.IsChecked = true;
-                    else group.IsChecked = false;
-            }
-        }
-
-        public void SaveCheckedStatuses()
-        {
-            CheckedStatuses?.Clear();
-
-            foreach (var status in TaskStatuses)
-                if (status.IsChecked)
-                    CheckedStatuses.Add(status.Name);
-
-            Config.Settings.CheckedStatuses = CheckedStatuses.ToArray();
-        }
-
-        void LoadCheckedStatuses()
-        {
-            if (Config.Settings.CheckedStatuses != null && Config.Settings.CheckedStatuses.Length != 0)
-            {
-                foreach (var status in TaskStatuses)
-                    if (Config.Settings.CheckedStatuses.Contains(status.Name))
-                        status.IsChecked = true;
-                    else status.IsChecked = false;
-            }
-        }
-
-        public void SaveCheckedTypes()
-        {
-            CheckedTypes?.Clear();
-
-            foreach (var type in TaskTypes)
-                if (type.IsChecked)
-                    CheckedTypes.Add(type.Name);
-
-            Config.Settings.CheckedTypes = CheckedTypes.ToArray();
-        }
-
-        void LoadCheckedTypes()
-        {
-            if (Config.Settings.CheckedTypes != null && Config.Settings.CheckedTypes.Length != 0)
-            {
-                foreach (var type in TaskTypes)
-                    if (Config.Settings.CheckedTypes.Contains(type.Name))
-                        type.IsChecked = true;
-                    else type.IsChecked = false;
-            }
-        }
-
-        public void SaveCheckedPriorities()
-        {
-            CheckedPriorities?.Clear();
-
-            foreach (var priority in Priorities)
-                if (priority.IsChecked)
-                    CheckedPriorities.Add(priority.Name);
-
-            Config.Settings.CheckedPriorities = CheckedPriorities.ToArray();
-        }
-
-        void LoadCheckedPriorities()
-        {
-            if (Config.Settings.CheckedPriorities != null && Config.Settings.CheckedPriorities.Length != 0)
-            {
-                foreach (var priority in Priorities)
-                    if (Config.Settings.CheckedPriorities.Contains(priority.Name))
-                        priority.IsChecked = true;
-                    else priority.IsChecked = false;
-            }
-        }
-
-        #endregion
-
-        async Task<bool> CheckDictionaries()
-        {
-            if (Employees?.Count <= 0)
-            {
-                var temp = await Request.GetEmployees();
-                if (temp == null || temp.Count == 0)
-                {
-                    GettingTaskInRun = true;
-                    return false;
-                }
-                Employees = temp;
-            }
-
-            if (Groups.Count <= 0)
-            {
-                if (!await Request.GetGroups(Groups))
-                {
-                    GettingTaskInRun = true;
-                    return false;
-                }
-                if (CheckedGroups.Count <= 0)
-                    SaveCheckedGroups();
-                else LoadCheckedGroups();
-            }
-
-            if (TaskStatuses.Count <= 0)
-            {
-                if (!await Request.GetStatuses(TaskStatuses))
-                {
-                    GettingTaskInRun = true;
-                    return false;
-                }
-                if (TaskStatuses.Count <= 0)
-                    SaveCheckedStatuses();
-                else LoadCheckedStatuses();
-            }
-
-            if (TaskTypes.Count <= 0)
-            {
-                if (!await Request.GetTypes(TaskTypes))
-                {
-                    GettingTaskInRun = true;
-                    return false;
-                }
-                if (TaskTypes.Count <= 0)
-                    SaveCheckedTypes();
-                else LoadCheckedTypes();
-            }
-
-            if (Priorities.Count <= 0)
-            {
-                if (!await Request.GetPriorities(Priorities))
-                {
-                    GettingTaskInRun = true;
-                    return false;
-                }
-                if (Priorities.Count <= 0)
-                    SaveCheckedPriorities();
-                else LoadCheckedPriorities();
-            }
-
-            return true;
         }
 
         async Task GetPerformance(string requestType)
         {
-            timer.Start();
             GettingTaskInRun = false;
+
+            if (!timer.IsEnabled)
+                await CheckDictionaries();
+
+            timer.Start();
+
             if (Config.Settings.ElectronicQueueMode)
             {
                 SelectedDateTo = DateTime.Now;
                 SelectedDateFrom = DateTime.Now;
             }
 
-            // Если при проверке номенклатуры произошёл сбой и не был найден один из списков, то завершает метод
-            if (!await CheckDictionaries())
+            if (Employees?.Count != 0 && Groups.Count != 0 && TaskTypes.Count != 0 && Priorities.Count != 0 && TaskStatuses.Count != 0)
             {
-                GettingTaskInRun = true;
-                return;
-            }
+                await Request.GetEmployeePerformance(Employees, SelectedDateFrom, SelectedDateTo, requestType);
 
-            if (Employees?.Count <= 0 && Groups.Count <= 0 && TaskTypes.Count <= 0 && Priorities.Count <= 0 && TaskStatuses.Count <= 0)
-            {
-                GettingTaskInRun = true;
-                return;
+                CheckGroup();
+                CheckOpenTasks();
+                SortEmployees();
             }
-
-            if (!await Request.GetEmployeePerformance(Employees, SelectedDateFrom, SelectedDateTo, requestType))
-            {
-                GettingTaskInRun = true;
-                return;
-            }
-
-            CheckGroup();
-            CheckOpenTasks();
-            SortEmployees();
 
             LastUpdateTime = await Request.GetLastUpdateTime();
             GettingTaskInRun = true;
         }
+
+        async Task CheckDictionaries()
+        {
+            var connections = await Request.GetDictionaries<GroupEmployee>(apiEndpoint: "employee/group_employee");
+            WriteLog.Info($"Количество связей сотрудников: {connections.Count}");
+            UpdateCollection(connections, GroupEmployeeConnections);
+
+            var employees = await Request.GetCollectionFromAPI<Employee>("employee");
+            UpdateCollection(employees, Employees);
+            WriteLog.Info($"Количество сотрудников: {employees.Count}");
+
+            var groups = await Request.GetDictionaries<Group>(apiEndpoint: "group") as ICollection<IOkdeskDictionary>;
+            UpdateOrRemoveDictionary(groups, Groups);
+
+            var statuses = await Request.GetDictionaries<Status>(apiEndpoint: "issueStatus") as ICollection<IOkdeskDictionary>;
+            UpdateOrRemoveDictionary(statuses, TaskStatuses);
+
+            var taskTypes = await Request.GetDictionaries<TaskType>(apiEndpoint: "issueType") as ICollection<IOkdeskDictionary>;
+            UpdateOrRemoveDictionary(taskTypes, TaskTypes);
+
+            var priorities = await Request.GetDictionaries<Priority>(apiEndpoint: "issuePriority") as ICollection<IOkdeskDictionary>;
+            UpdateOrRemoveDictionary(priorities, Priorities);
+        }
+
+        static void UpdateCollection<T>(ICollection<T> collectionFromAPI, ICollection<T> collectionFromCache)
+        {
+            if (collectionFromAPI == null) return;
+
+            foreach (var item in collectionFromAPI)
+                collectionFromCache.Add(item);
+        }
+
+        static void UpdateOrRemoveDictionary(ICollection<IOkdeskDictionary> collectionFromAPI, ObservableCollection<IOkdeskDictionary> collectionInCache)
+        {
+            if (collectionFromAPI == null) return;
+
+            foreach (var itemFromAPI in collectionFromAPI)
+            {
+                var itemFromCache = collectionInCache.FirstOrDefault(p => p.Id == itemFromAPI.Id);
+
+                if (itemFromCache == null) 
+                    collectionInCache.Add(itemFromAPI);
+                else 
+                    itemFromCache.UpdateWithoutChecked(itemFromAPI);
+            }
+
+            // Если в кеше есть элемент, который был удалён/либо его нет в API, то удаляет его
+            foreach (var itemFromCache in collectionInCache.ToList())
+            {
+                var itemFromApi = collectionFromAPI.FirstOrDefault(p => p.Id == itemFromCache.Id);
+
+                if (itemFromApi == null) 
+                    collectionInCache.Remove(itemFromCache);
+            }
+        }        
 
         void SortEmployees()
         {
             // Очистка списка активных сотрудников
             ActiveEmployees?.Clear();
             // Сортировка всех сотрудников по решённым заявкам по уменьшению
-            if (Employees != null)
+            if (Employees == null) return;
+
+            Employees.Sort();
+            foreach (var employee in Employees)
             {
-                Employees.Sort();
-                foreach (var employee in Employees)
+                if (HideEmployeesWithoutSolvedIssues && employee.SolvedIssues == 0)
                 {
-                    // Если сотрудник активен, то есть имеет решённые/открытые заявки или списанное время, то добавить в активные
-                    if ((employee.OpenTasks != 0 || employee.SolvedTasks != 0 || employee.SpentedTimeDouble != 0) && employee.IsSelected == true)
-                        ActiveEmployees?.Add(employee);
-                    else
-                        employee.IsSelected = false;
+                    employee.IsSelected = false;
+                    continue;
                 }
+
+                if (HideEmployeesWithoutWrittenOffTime && employee.SpentedTime == 0)
+                {
+                    employee.IsSelected = false;
+                    continue;
+                }
+
+                if (HideEmployeesWithoutOpenIssues && employee.OpenTasks == 0)
+                {
+                    employee.IsSelected = false;
+                    continue;
+                }
+
+                // Если сотрудник активен, то есть имеет текущие заявки или списанное время, то добавить в активные
+                if ((employee.SolvedIssues != 0 || employee.OpenTasks != 0 || employee.SpentedTime != 0) && employee.IsSelected == true)
+                {
+                    ActiveEmployees?.Add(employee);
+                }
+                else
+                    employee.IsSelected = false;
             }
         }
 
@@ -717,7 +612,11 @@ namespace AqbaApp.ViewModel
                 for (var i = 0; i < Groups.Count; i++)
                 {
                     // Если сотрудник состоит в группе и она выделена в чекбоксе, то
-                    if (Groups[i]?.EmployeesId.Contains(employee.Id) == true && Groups[i].IsChecked == true)
+                    
+                    var employeeId = GroupEmployeeConnections.FirstOrDefault(e => e.Id == employee.Id);
+                    var connection = employeeId.Groups.Any(g => g == Groups[i].Id);
+
+                    if (connection == true && Groups[i].IsChecked == true)
                     {
                         // Если сотрудника отключили (убрав чекбокс с группы), а теперь включили назад,
                         // то вернуть "выделение"
@@ -750,12 +649,112 @@ namespace AqbaApp.ViewModel
                     ?.Where( i => i?.PriorityId == Priorities?.FirstOrDefault( p => p.IsChecked && p.Id == i?.PriorityId )?.Id)
                     ?.Count();
 
-                // Если количество является не null, то записывает его в открытые заявки сотрудника
+                // Если количество является не null, то записывает его в открытые(текущие) заявки сотрудника
                 if (count != null && count > 0)
                     employee.OpenTasks += (int)count;
             }
         }
-                
+        
+        static void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.NewItems)
+                    item.PropertyChanged += ItemPropertyChanged;
+
+                if (e.Action == NotifyCollectionChangedAction.Add)
+                {
+                    foreach (var item in e.NewItems)
+                    {
+                        if (item is Priority priority)
+                        {
+                            if (Config.Cache.Priorities.Any(pInCache => pInCache.Id == priority.Id)) 
+                                continue;
+                            Config.Cache.Priorities.Add(new Priority() { Id = priority.Id, Name = priority.Name, IsChecked = priority.IsChecked });
+                        }
+                        else if (item is Status status)
+                        {
+                            if (Config.Cache.Statuses.Any(sInCache => sInCache.Id == status.Id)) 
+                                continue;
+                            Config.Cache.Statuses.Add(new Status() { Id = status.Id, Name = status.Name, IsChecked = status.IsChecked });
+                        }
+                        else if (item is TaskType type)
+                        {
+                            if (Config.Cache.Types.Any(tInCache => tInCache.Id == type.Id)) 
+                                continue;
+                            Config.Cache.Types.Add(new TaskType() { Id = type.Id, Name = type.Name, IsChecked = type.IsChecked });
+                        }
+                        else if (item is Group group)
+                        {
+                            if (Config.Cache.Groups.Any(gInCache => gInCache.Id == group.Id)) 
+                                continue;
+                            Config.Cache.Groups.Add(new Group() { Id = group.Id, Name = group.Name, IsChecked = group.IsChecked });
+                        }
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.OldItems)
+                    item.PropertyChanged -= ItemPropertyChanged;
+
+                if (e.Action == NotifyCollectionChangedAction.Remove)
+                {
+                    foreach (var item in e.OldItems)
+                    {
+                        if (item is Priority priority)
+                        {
+                            var priorityFroDelete = Config.Cache.Priorities?.FirstOrDefault(pInCache => pInCache.Id == priority.Id);
+                            Config.Cache.Priorities?.Remove(priorityFroDelete);
+                        }
+                        else if (item is Status status)
+                        {
+                            var statusFroDelete = Config.Cache.Statuses?.FirstOrDefault(sInCache => sInCache.Id == status.Id);
+                            Config.Cache.Statuses?.Remove(statusFroDelete);
+                        }
+                        else if (item is TaskType type)
+                        {
+                            var typeFroDelete = Config.Cache.Types?.FirstOrDefault(tInCache => tInCache.Id == type.Id);
+                            Config.Cache.Types?.Remove(typeFroDelete);
+                        }
+                        else if (item is Group group)
+                        {
+                            var groupFroDelete = Config.Cache.Groups?.FirstOrDefault(tInCache => tInCache.Id == group.Id);
+                            Config.Cache.Groups?.Remove(groupFroDelete);
+                        }
+                    }
+                }
+            }
+        }
+
+        static void ItemPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender is Priority priority)
+            {
+                var priorityInCache = Config.Cache.Priorities?.FirstOrDefault(p => p.Id == priority.Id);
+
+                priorityInCache?.Update(priority);
+            }
+            else if (sender is Status status)
+            {
+                var statusInCache = Config.Cache.Statuses?.FirstOrDefault(p => p.Id == status.Id);
+
+                statusInCache?.Update(status);
+            }
+            else if (sender is TaskType type)
+            {
+                var typeInCache = Config.Cache.Types?.FirstOrDefault(p => p.Id == type.Id);
+
+                typeInCache?.Update(type);
+            }
+            else if (sender is Group group)
+            {
+                var groupInCache = Config.Cache.Groups?.FirstOrDefault(p => p.Id == group.Id);
+
+                groupInCache?.Update(group);
+            }
+        }
 
         #endregion
     }

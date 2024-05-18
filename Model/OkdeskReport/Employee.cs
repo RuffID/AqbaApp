@@ -1,32 +1,32 @@
-﻿using System;
+﻿using AqbaApp.Interfaces;
+using Newtonsoft.Json;
+using System;
 
 namespace AqbaApp.Model.OkdeskReport
 {
-    public class Employee : IComparable
+    public class Employee : IComparable, IEntity
     {
         public int Id { get; set; }
+        public int SolvedIssues { get; set; }
+        public double SpentedTime { get; set; }
+        public Issue[] Issues { get; set; }
         public string Last_name { get; set; }
         public string First_name { get; set; }
         public string Patronymic { get; set; }
-        public string Position { get; set; }
-        public bool Active { get; set; }
-        public string Email { get; set; }
-        public string Login { get; set; }
-        public string Phone { get; set; }
-        public string Comment { get; set; }
-        public Group[] Groups { get; set; }
-        public Role[] Roles { get; set; }
-        public string FullName { get { return $"{Last_name} {First_name} {Patronymic}"; } }
-        public Issue[] Issues { get; set; }
-        public int SolvedTasks { get; set; }
+
+        [JsonIgnore]
         public int OpenTasks { get; set; }
-        public double SpentedTimeDouble { get; set; }
-        public string SpentedTime
+        [JsonIgnore]
+        public string FullName { get { return $"{Last_name} {First_name} {Patronymic}"; } }
+        [JsonIgnore]
+        public bool IsSelected { get; set; } = true;
+        [JsonIgnore]
+        public string SpentedTimeString
         {
             get
             {
-                var hours = Math.Truncate(SpentedTimeDouble);
-                var minutes = Math.Round((SpentedTimeDouble - hours) * 60);
+                var hours = Math.Truncate(SpentedTime);
+                var minutes = Math.Round((SpentedTime - hours) * 60);
                 if (minutes == 60)
                 {
                     hours++;
@@ -34,27 +34,6 @@ namespace AqbaApp.Model.OkdeskReport
                 }
                 return $"{hours} ч. {minutes} м.";
             }
-        }        
-        public bool IsSelected { get; set; } = true;
-
-        public Employee() { }
-        public Employee(Employee employee)
-        {
-            Id = employee.Id;
-            Last_name = employee.Last_name;
-            First_name = employee.First_name;
-            Patronymic = employee.Patronymic;
-            Position = employee.Position;
-            Email = employee.Email;
-            Login = employee.Login;
-            Phone = employee.Phone;
-            Comment = employee.Comment;
-            Groups = employee.Groups;
-            Roles = employee.Roles;
-            OpenTasks = employee.OpenTasks;
-            SolvedTasks = employee.SolvedTasks;
-            Issues = employee.Issues;
-            IsSelected = employee.IsSelected;
         }
 
         public override bool Equals(object obj)
@@ -70,9 +49,9 @@ namespace AqbaApp.Model.OkdeskReport
         {
             if (obj is Employee o)
             {
-                if (SolvedTasks < o.SolvedTasks)
+                if (SolvedIssues < o.SolvedIssues)
                     return 1;
-                else if (this.SolvedTasks > o.SolvedTasks)
+                else if (SolvedIssues > o.SolvedIssues)
                     return -1;
                 else
                     return 0;

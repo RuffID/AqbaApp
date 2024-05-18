@@ -54,8 +54,8 @@ namespace AqbaApp.Helper
             if (!TokenIsValid(response.Response))
                 return false;
 
-            // Иначе сохранить данные
-            Config.SaveToken(response.Response);
+            // Иначе сохранить данные по токену
+            Config.Settings.Token = response.Response;
             return true;
         }
 
@@ -77,7 +77,7 @@ namespace AqbaApp.Helper
             else
             {
                 _ = Notice.Show(NotificationType.Success, "Успешный вход!");
-                Config.SaveToken(token.Response);
+                Config.Settings.Token = token.Response;
                 return true;
             }
         }

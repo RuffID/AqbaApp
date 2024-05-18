@@ -1,4 +1,4 @@
-﻿using AqbaApp.Model.Authorization;
+﻿using AqbaApp.Interfaces;
 using AqbaApp.Model.Client;
 using Newtonsoft.Json;
 using System;
@@ -9,54 +9,52 @@ namespace AqbaApp
 {
     public static class Config
     {
-        public static Settings Settings { get; set; }
+        //TODO исправить на dependency injection
+        public static Settings Settings;
+        public static Cache Cache;
 
         static Config()
         {
             Settings = new();
-            InitializeConfig();
+            Cache = new();
+            InitializeConfig(ref Settings);
+            InitializeConfig(ref Cache);
         }
 
-        static void Load()
+        static void Load<T>(ref T config)
         {
             try
             {
-                string configString = File.ReadAllText(Immutable.configPath);
+                string configString = File.ReadAllText(((IConfig)config).PathToFile);
                 if (!string.IsNullOrEmpty(configString))
-                    Settings = JsonConvert.DeserializeObject<Settings>(configString);
+                    config = JsonConvert.DeserializeObject<T>(configString);
 
-                if (Settings == null || (string.IsNullOrEmpty(configString) || configString == "[]"))
+                if (config == null || (string.IsNullOrEmpty(configString) || configString == "[]"))
                     WriteLog.Error("Failed to load config");
             }
             catch (Exception ex) { WriteLog.Error(ex.ToString()); }
         }
 
-        public static void InitializeConfig()
+        public static void InitializeConfig<T>(ref T config)
         {
-            if (!File.Exists(Immutable.configPath))
-                SaveOrCreateConfig();
+            if (!File.Exists(((IConfig)config).PathToFile))
+                SaveOrCreateConfig(ref config);
             // После в любом случае нужно загрузить настройки методом Load()
-            Load();
+            Load(ref config);
         }
 
-        public static void SaveOrCreateConfig()
+        public static void SaveOrCreateConfig<T>(ref T config)
         {
             try
             {
-                string json = JsonConvert.SerializeObject(Settings, Formatting.Indented);
+                string json = JsonConvert.SerializeObject(config, ((IConfig)config).Formatting);
 
-                if (!Directory.Exists(Path.Combine(Immutable.appdataPath, "Config")))
-                    Directory.CreateDirectory(Path.Combine(Immutable.appdataPath, "Config"));
-                               
-                File.WriteAllText(Immutable.configPath, json, Encoding.UTF8);
+                if (!Directory.Exists(Path.Combine(Immutable.appdataPath, ((IConfig)config).PathToFolder)))
+                    Directory.CreateDirectory(Path.Combine(Immutable.appdataPath, ((IConfig)config).PathToFolder));
+
+                File.WriteAllText(((IConfig)config).PathToFile, json, Encoding.UTF8);
             }
             catch (Exception ex) { WriteLog.Error(ex.ToString()); }
-        }
-
-        public static void SaveToken(AuthenticateResponse response)
-        {            
-            Settings.Token = response;
-            SaveOrCreateConfig();
         }
     }
 }

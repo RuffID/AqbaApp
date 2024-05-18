@@ -1,39 +1,37 @@
-﻿namespace AqbaApp.Model.OkdeskReport
-{
-    public class TaskType : ViewModelBase
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Code { get; set; }
-        public bool Default { get; set; }
-        public bool Inner { get; set; }
-        public bool Available_for_client { get; set; }
-        public string Type { get; set; }
-        public TaskType[] Children { get; set; }
-        private bool isChecked = true;
-        public bool IsChecked
-        {
-            get { return isChecked; }
-            set
-            {
-                isChecked = value;
-                OnPropertyChanged(nameof(IsChecked));
-            }
-        }
+﻿using AqbaApp.Interfaces;
 
+namespace AqbaApp.Model.OkdeskReport
+{
+    public class TaskType : ViewModelBase, IOkdeskDictionary
+    {
         public TaskType() { }
 
-        public TaskType(TaskType taskType)
+        public TaskType(IOkdeskDictionary type)
+        {
+            id = type.Id;
+            name = type.Name;
+            IsChecked = type.IsChecked;
+        }
+
+        private int id;
+        private string name;
+        private bool isChecked = true;
+
+        public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
+        public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }        
+        public bool IsChecked { get { return isChecked; } set { isChecked = value; OnPropertyChanged(nameof(IsChecked)); } }
+
+        public void Update(IOkdeskDictionary taskType)
         {
             Id = taskType.Id;
             Name = taskType.Name;
-            Code = taskType.Code;
-            Default = taskType.Default;
-            Inner = taskType.Inner;
-            Available_for_client = taskType.Available_for_client;
-            Type = taskType.Type;
-            Children = taskType.Children;
             IsChecked = taskType.IsChecked;
+        }
+
+        public void UpdateWithoutChecked(IOkdeskDictionary taskType)
+        {
+            Id = taskType.Id;
+            Name = taskType.Name;
         }
     }
 }
