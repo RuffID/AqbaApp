@@ -94,7 +94,7 @@ namespace AqbaApp.Service.Client
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking bearer token.");
+                _logger.LogError(ex, "[Method:{MethodName}] Error checking bearer token.", nameof(IsTokenValid));
                 return false;
             }
 

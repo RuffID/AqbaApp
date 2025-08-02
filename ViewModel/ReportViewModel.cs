@@ -86,7 +86,8 @@ namespace AqbaApp.ViewModel
 
         public DateTime SelectedDateFrom
         {
-            get => selectedDateFrom;
+            // Возвращает только дату, без времени
+            get => selectedDateFrom.Date;
             set
             {
                 selectedDateFrom = value;
@@ -96,7 +97,7 @@ namespace AqbaApp.ViewModel
 
         public DateTime SelectedDateTo
         {
-            get => selectedDateTo;
+            get => selectedDateTo.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
             set
             {
                 selectedDateTo = value;

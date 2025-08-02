@@ -44,6 +44,17 @@ namespace AqbaApp.Service.Client
 
         public bool? OpenDialog<TWindow>() where TWindow : Window
         {
+            foreach (Window existWindow in Application.Current.Windows)
+            {
+                if (existWindow is TWindow existingWindow)
+                {
+                    if (existingWindow.IsVisible)
+                        return null; // окно уже открыто и активно
+
+                    return existingWindow.ShowDialog(); // открыто, но было скрыто
+                }
+            }
+
             var window = serviceProvider.GetRequiredService<TWindow>();
 
             if (window == null)

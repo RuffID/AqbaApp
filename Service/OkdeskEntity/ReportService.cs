@@ -12,7 +12,6 @@ namespace AqbaApp.Service.OkdeskEntity
     {
         private async Task<List<ReportInfo>?> GetReportFromCloudApi(DateTime dateFrom, DateTime dateTo)
         {
-            dateTo = new(dateTo.Year, dateTo.Month, dateTo.Day, hour: 23, minute: 59, second: 59);
             string link = $"{mainSettings.Settings.ServerAddress}/{immutable.ApiMainEndpoint}/report?dateFrom={dateFrom:yyyy-MM-dd}&dateTo={dateTo:yyyy-MM-dd HH:mm:ss}";
 
             return await request.GetRangeOfItems<ReportInfo>(link);
@@ -20,7 +19,7 @@ namespace AqbaApp.Service.OkdeskEntity
 
         public async Task<bool> GetEmployeePerformance(List<Employee> employees, DateTime dateFrom, DateTime dateTo)
         {
-            foreach (var emp in employees)
+            foreach (Employee emp in employees)
             {
                 emp.SolvedIssues = 0;
                 emp.SpentedTime = 0;

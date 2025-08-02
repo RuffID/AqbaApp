@@ -9,7 +9,8 @@ namespace AqbaApp.Core
     {
         private readonly string _logDirectory = logDirectory;
         private readonly ILogger<LogArchiver> _logger = logger;
-        private readonly string logFormat = "*_log.txt";
+        private readonly string _logFormat = "*_log.txt";
+        private readonly string _logZipFormat = "*.zip";
 
         public void ArchiveAndCleanLogs()
         {
@@ -29,26 +30,35 @@ namespace AqbaApp.Core
 
         private void ArchiveOldLogs()
         {
-            string[] files = Directory.GetFiles(_logDirectory, logFormat);
-            DateTime today = DateTime.Now.Date;
+            string[] files = Directory.GetFiles(_logDirectory, _logFormat);
+            DateTime today = DateTime.Today;
+            DateTime yesterday = today.AddDays(-1);
 
             foreach (string file in files)
             {
-                DateTime creationDate = File.GetCreationTime(file);
+                string fileName = Path.GetFileName(file);
 
-                if (creationDate >= today)
-                    continue; // лог за сегодня — он сейчас открыт, пропускаем
-
-                if (creationDate.Date < DateTime.Now.Date)
+                if (!DateTime.TryParseExact(fileName.Substring(0, 10), "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime fileDate))
                 {
-                    string zipFile = Path.Combine(_logDirectory, $"{Path.GetFileNameWithoutExtension(file)}.zip");
-                    FileInfo info = new(zipFile);
+                    _logger.LogWarning("Skipped unknown log file format: {FileName}", file);
+                    continue;
+                }
 
-                    // 22 - дефолтный размер пустого zip архива
-                    if (File.Exists(zipFile) && info.Length == 22)
-                        continue; // уже заархивировано, поэтому пропускаем файл
-                    else 
-                        File.Delete(zipFile);
+                if (fileDate >= yesterday)
+                    continue; // пропускаем вчерашний и сегодняшний лог
+
+                string zipFile = Path.Combine(_logDirectory, $"{Path.GetFileNameWithoutExtension(file)}.zip");
+
+                try
+                {
+                    if (File.Exists(zipFile))
+                    {
+                        FileInfo info = new(zipFile);
+                        if (info.Length == 22)
+                            File.Delete(zipFile); // перезапишем пустой архив
+                        else
+                            continue; // архив уже существует
+                    }
 
                     _logger.LogInformation("Archiving file {FileName}", file);
 
@@ -60,12 +70,16 @@ namespace AqbaApp.Core
                     File.Delete(file);
                     _logger.LogInformation("File {FileName} has been archived and deleted.", file);
                 }
+                catch (IOException ex)
+                {
+                    _logger.LogWarning(ex, "File {FileName} is in use and was skipped.", file);
+                }
             }
         }
 
         private void CleanOldArchives()
         {
-            string[] archives = Directory.GetFiles(_logDirectory, logFormat);
+            string[] archives = Directory.GetFiles(_logDirectory, _logZipFormat);
 
             foreach (string archive in archives)
             {
