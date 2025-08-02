@@ -1,25 +1,15 @@
-﻿using AqbaApp.Dto;
+﻿using AqbaApp.Core;
 using AqbaApp.Interfaces;
-using System.Text.Json.Serialization;
 
 namespace AqbaApp.Model.OkdeskReport
 {
-    public class Priority : ViewModelBase, IOkdeskDictionary
+    public class Priority : NotifyProperty, IOkdeskDictionary
     {
-        public Priority() { }
-        
-        public Priority(IOkdeskDictionary priority)
-        {
-            id = priority.Id;
-            name = priority.Name;
-            isChecked = priority.IsChecked;
-        }
-
-        private int id;
-        private string name;
+        private long id;
+        private string name = string.Empty;
         private bool isChecked = true;        
 
-        public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
+        public long Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
         public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }
         public bool IsChecked { get { return isChecked; } set { isChecked = value; OnPropertyChanged(nameof(IsChecked)); } }
 

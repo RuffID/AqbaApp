@@ -1,26 +1,25 @@
 ﻿using AqbaApp.Interfaces;
-using Newtonsoft.Json;
 using System;
 
 namespace AqbaApp.Model.OkdeskReport
 {
-    public class Employee : IComparable, IEntity
+    public class Employee : IEntity, IComparable
     {
         public int Id { get; set; }
-        public int SolvedIssues { get; set; }
+        public long SolvedIssues { get; set; }
         public double SpentedTime { get; set; }
-        public Issue[] Issues { get; set; }
-        public string Last_name { get; set; }
-        public string First_name { get; set; }
-        public string Patronymic { get; set; }
+        public Issue[] Issues { get; set; } = [];   
 
-        [JsonIgnore]
-        public int OpenTasks { get; set; }
-        [JsonIgnore]
-        public string FullName { get { return $"{Last_name} {First_name} {Patronymic}"; } }
-        [JsonIgnore]
+        public string LastName { get; set; } = string.Empty;
+
+        public string FirstName { get; set; } = string.Empty;
+
+        public string Patronymic { get; set; } = string.Empty;
+        public long OpenTasks { get; set; }
+
+        public string FullName { get { return $"{LastName} {FirstName} {Patronymic}"; } }
         public bool IsSelected { get; set; } = true;
-        [JsonIgnore]
+
         public string SpentedTimeString
         {
             get
@@ -36,18 +35,18 @@ namespace AqbaApp.Model.OkdeskReport
             }
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is Employee employee)
+            if (obj != null && obj is Employee employee)
             {
                 return Id == employee.Id;
             }
             return false;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
-            if (obj is Employee o)
+            if (obj != null && obj is Employee o)
             {
                 if (SolvedIssues < o.SolvedIssues)
                     return 1;

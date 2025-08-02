@@ -11,9 +11,10 @@ namespace AqbaApp.View
     /// </summary>
     public partial class ReportPage : Page
     {
-        public ReportPage()
+        public ReportPage(ReportViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
         }
 
         private void SaveBackgroundPath_OnClick(object sender, RoutedEventArgs e)
@@ -33,10 +34,13 @@ namespace AqbaApp.View
                 (DataContext as ReportViewModel)?.SaveBackgroundPath(dialog.FileName);
         }
 
-        private void OpenTaskList_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void OpenTaskList_SizeChanged(object? sender, SizeChangedEventArgs e)
         {
-            ListView listView = sender as ListView;
-            GridView gView = listView.View as GridView;
+            if (sender == null) return;
+
+            ListView? listView = sender as ListView;
+
+            if (listView?.View is not GridView gView || listView == null) return;
 
             var workingWidth = listView.ActualWidth - SystemParameters.VerticalScrollBarWidth; // take into account vertical scrollbar
             var col1 = 0.40;

@@ -1,19 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using AqbaApp.Interfaces;
+using Newtonsoft.Json;
 
 namespace AqbaApp.Model.OkdeskEntities
 {
-    public class KindParameter
+    public class KindParameter : IEntity
     {
-        [JsonIgnore]
         public int Id { get; set; }
-
-        [JsonProperty("code")]
-        public string Code { get; set; }
-
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("field_type")]
-        public string FieldType { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string FieldType { get; set; } = string.Empty;
     }
 }

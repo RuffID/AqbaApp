@@ -1,55 +1,59 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using AqbaApp.Helper;
+﻿using System;
+using System.Windows;
+using AqbaApp.Core;
+using AqbaApp.Interfaces;
+using AqbaApp.Interfaces.Service;
+using AqbaApp.Model.Client;
+using AqbaApp.Service.Client;
 using AqbaApp.View;
 
 namespace AqbaApp.ViewModel
 {
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : NotifyProperty
     {
-        public MainViewModel()
-        {
-            //Config.Start();
-            ButtonAccessibility = false;
-            Access = new AccessPage();
-            Report = new ReportPage();
-            Settings = new SettingsPage();
-            CurrentPage = Report;
-            CurWindowState = WindowState.Normal;
-            CurWindowStyle = WindowStyle.SingleBorderWindow;
-            CheckElectronicQueueMode();
-        }
-
         #region [Variables]
 
-        private bool buttonAccessibility;
-        private readonly Page Access;
-        private readonly Page Report;
-        private readonly Page Settings;
-        private Page _currentPage;
+        private readonly SettingService<MainSettings> _settings;
+        private readonly INavigationService _navigationService;
+        private readonly Lazy<RelayCommand> _openAccessPage;
+        private readonly Lazy<RelayCommand> _openReportPage;
+        private readonly Lazy<RelayCommand> _openSettingPage;
+        private bool buttonAccessibility;        
         private WindowState _curWindowState;
         private WindowStyle _curWindowStyle;
-        private RelayCommand _changeWindow;
-        RelayCommand openLoginPage;
-        RelayCommand openReportPage;
-        RelayCommand openSettingsPage;
-        RelayCommand closingWindow;
-        RelayCommand mainWindowLoaded;
 
         #endregion
 
-        #region [Properties]        
-
-        public bool ButtonAccessibility { 
-            get { return buttonAccessibility; } 
-            set { buttonAccessibility = value; OnPropertyChanged(nameof(ButtonAccessibility)); } 
-        }
-
-        public Page CurrentPage
+        public MainViewModel(SettingService<MainSettings> mainSettings, INavigationService navigationService)
         {
-            get => _currentPage;
-            set => Set(ref _currentPage, value);
+            _settings = mainSettings;
+            _navigationService = navigationService;
+            ButtonAccessibility = false;
+            CurWindowState = WindowState.Normal;
+            CurWindowStyle = WindowStyle.SingleBorderWindow;
+
+            _openAccessPage = new Lazy<RelayCommand>(() => new RelayCommand(o => _navigationService.NavigateToPage<AccessPage>()));
+            _openReportPage = new Lazy<RelayCommand>(() => new RelayCommand(o => _navigationService.NavigateToPage<ReportPage>()));
+            _openSettingPage = new Lazy<RelayCommand>(() => new RelayCommand(o => _navigationService.NavigateToPage<SettingsPage>()));
+
+            CheckElectronicQueueMode();
         }
+
+        #region [Properties]
+
+        public bool IsAuthenticated => !string.IsNullOrEmpty(_settings.Settings.Token?.AccessToken);
+
+        public string LoginIcon => IsAuthenticated ? @"Resources/Icons/logout.png" : @"Resources/Icons/login.png";
+
+        public bool ButtonAccessibility 
+        { 
+            get => buttonAccessibility;
+            set 
+            { 
+                buttonAccessibility = value; 
+                OnPropertyChanged(nameof(ButtonAccessibility)); 
+            } 
+        }        
 
         public WindowState CurWindowState
         {
@@ -74,36 +78,18 @@ namespace AqbaApp.ViewModel
         #endregion
 
         #region [Commands]
-                
-        public RelayCommand OpenLoginPage
-        {
-            get
-            {
-                return openLoginPage ??= new RelayCommand((o) => CurrentPage = Access);
-            }
-        }        
 
-        public RelayCommand OpenReportPage
-        {
-            get
-            {
-                return openReportPage ??= new RelayCommand((o) => CurrentPage = Report);
-            }
-        }
+        public RelayCommand OpenAccessPage => _openAccessPage.Value;
 
-        public RelayCommand OpenSettingsPage
-        {
-            get
-            {
-                return openSettingsPage ??= new RelayCommand((o) => CurrentPage = Settings);
-            }
-        }
+        public RelayCommand OpenReportPage => _openReportPage.Value;
+
+        public RelayCommand OpenSettingsPage => _openSettingPage.Value;
 
         public RelayCommand ChangeWindowState
         {
             get
             {
-                return _changeWindow ??= new RelayCommand((o) =>
+                return new RelayCommand((o) =>
                 {
                     if (CurWindowState == WindowState.Normal)
                     {
@@ -118,47 +104,44 @@ namespace AqbaApp.ViewModel
                 });
             }
         }
-        
-        public RelayCommand ClosingWindow
+
+        public RelayCommand ExitOrLoginInService
         {
             get
             {
-                return closingWindow ??= new RelayCommand((o) =>
+                return new RelayCommand((o) =>
                 {
-                    Config.SaveOrCreateConfig(ref Config.Settings);
-                    Config.SaveOrCreateConfig(ref Config.Cache);
-                });
-            }
-        }
+                    // Если пользователь залогинен в систему (токен сохранён/он не равен null)
+                    if (IsAuthenticated)
+                    {
+                        // То необходимо выйти из системы
+                        if (_settings.Settings.Token != null)
+                        {
+                            _settings.Settings.Token.AccessToken = string.Empty;
+                            OnPropertyChanged(nameof(IsAuthenticated));
+                            OnPropertyChanged(nameof(LoginIcon));
+                        }
+                    }
 
-        public RelayCommand MainWindowLoaded
-        {
-            get
-            {
-                return mainWindowLoaded ??= new RelayCommand(async (o) =>
-                {
-                    ButtonAccessibility = false;
-
-                    await Update.CheckUpdate();
-                    
-                    ButtonAccessibility = true;
+                    // И в любом случае (при входе или выходе из системы) необходимо открыть окно для входа
+                    if (_navigationService.OpenDialog<AuthorizationWindow>() == true && !string.IsNullOrEmpty(_settings.Settings.Token?.AccessToken))
+                    {
+                        OnPropertyChanged(nameof(IsAuthenticated));
+                        OnPropertyChanged(nameof(LoginIcon));
+                    }
                 });
             }
         }
 
         #endregion
 
-        #region [Methods]
-
         private void CheckElectronicQueueMode()
         {
-            if (Config.Settings.ElectronicQueueMode)
+            if (_settings.Settings.ElectronicQueueMode)
             {
                 CurWindowStyle = WindowStyle.None;
                 CurWindowState = WindowState.Maximized;
             }
         }
-
-        #endregion
     }
 }

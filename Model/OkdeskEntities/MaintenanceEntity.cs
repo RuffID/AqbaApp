@@ -1,38 +1,27 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using AqbaApp.Core;
+using AqbaApp.Interfaces;
 
 namespace AqbaApp.Model.OkdeskEntities
 {
-    public class MaintenanceEntity : ViewModelBase
+    public class MaintenanceEntity : NotifyProperty, IEntity, IHasName
     {
-        int id;
-        string name;
-        string address;
-        List<decimal> coords;
-        int companyId;
+        private int id;
+        private int companyId;
+        private string name = string.Empty;
+        private string address = string.Empty;
 
-        [JsonProperty("id")]
         public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
-
-        [JsonProperty("name")]
         public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }
-
-        [JsonProperty("address")]
         public string Address { get { return address; } set { address = value; OnPropertyChanged(nameof(Address)); } }
+        public bool Active { get; set; }
+        public int CompanyId { get { return companyId; } set { companyId = value; OnPropertyChanged(nameof(CompanyId)); } }
 
-        [JsonProperty("coordinates")]
-        public List<decimal> Coordinates { get { return coords; } set { coords = value; OnPropertyChanged(nameof(Coordinates)); } }
-
-        [JsonProperty("company_id")]
-        public int Company_Id { get { return companyId; } set { companyId = value; OnPropertyChanged(nameof(Company_Id)); } }
-
-        public void Replace(MaintenanceEntity newEntity)
+        public void Replace(MaintenanceEntity entity)
         {
-            Id = newEntity.Id;
-            Name = newEntity.Name;
-            Address = newEntity.Address;
-            Coordinates = newEntity.Coordinates;
-            Company_Id = newEntity.Company_Id;
+            Name = entity.Name;
+            Address = entity.Address;
+            Active = entity.Active;
+            CompanyId = entity.CompanyId;
         }
     }
 }

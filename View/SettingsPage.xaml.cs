@@ -11,9 +11,10 @@ namespace AqbaApp.View
     /// </summary>
     public partial class SettingsPage : Page
     {
-        public SettingsPage()
+        public SettingsPage(SettingsViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
         }
 
   

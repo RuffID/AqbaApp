@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using AqbaApp.ViewModel;
+using System.Windows.Controls;
 
 namespace AqbaApp.View
 {
@@ -7,9 +8,10 @@ namespace AqbaApp.View
     /// </summary>
     public partial class AccessPage : Page
     {
-        public AccessPage()
+        public AccessPage(AccessViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
         }
     }
 }

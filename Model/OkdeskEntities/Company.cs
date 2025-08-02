@@ -1,41 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using AqbaApp.Core;
+using AqbaApp.Interfaces;
 
 namespace AqbaApp.Model.OkdeskEntities
 {
-    public class Company : ViewModelBase
+    public class Company : NotifyProperty, IEntity, IHasName
     {
-        int id;
-        string name;
-        string additional_name;
-        bool? active;
-        Category category;
+        private int id;
+        private string name = string.Empty;
+        private string additional_name = string.Empty;
+        private bool? active;
+        private Category category = new();
 
-        [JsonProperty("id")]
         public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
-
-        [JsonProperty("name")]
         public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }
-
-        [JsonProperty("additional_name")]
         public string AdditionalName { get { return additional_name; } set { additional_name = value; OnPropertyChanged(nameof(AdditionalName)); } }
-
-        [JsonProperty("active")]
         public bool? Active { get { return active; } set { active = value; OnPropertyChanged(nameof(Active)); } }
-
         public Category Category { get { return category; } set { category = value; OnPropertyChanged(nameof(Category)); } }
 
-        public Company()
+        public void Replace(Company company)
         {
-            Category = new Category();
-        }
-
-        public void Replace(Company newCompany)
-        {
-            Id = newCompany.Id;
-            Name = newCompany.Name;
-            AdditionalName = newCompany.AdditionalName;
-            Active = newCompany.Active;
-            Category = newCompany.Category;
+            Name = company.Name;
+            AdditionalName = company.AdditionalName;
+            Active = company.Active;
         }
     }
 }

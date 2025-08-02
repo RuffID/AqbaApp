@@ -1,23 +1,15 @@
-﻿using AqbaApp.Interfaces;
+﻿using AqbaApp.Core;
+using AqbaApp.Interfaces;
 
 namespace AqbaApp.Model.OkdeskReport
 {
-    public class TaskType : ViewModelBase, IOkdeskDictionary
+    public class TaskType : NotifyProperty, IOkdeskDictionary
     {
-        public TaskType() { }
-
-        public TaskType(IOkdeskDictionary type)
-        {
-            id = type.Id;
-            name = type.Name;
-            IsChecked = type.IsChecked;
-        }
-
-        private int id;
-        private string name;
+        private long id;
+        private string name = string.Empty;
         private bool isChecked = true;
 
-        public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
+        public long Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
         public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }        
         public bool IsChecked { get { return isChecked; } set { isChecked = value; OnPropertyChanged(nameof(IsChecked)); } }
 

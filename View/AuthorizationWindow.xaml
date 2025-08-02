@@ -10,11 +10,8 @@
         Height="300" Width="500"
         d:Background="White"
         x:Name="Authorization"        
-        Title="Вход">
-
-    <Window.DataContext>
-        <vm:AuthorizationViewModel/>
-    </Window.DataContext>
+        Title="Вход"
+        d:DataContext="{d:DesignInstance Type=vm:AuthorizationViewModel, IsDesignTimeCreatable=False}">
 
     <Grid>
         <Grid.RowDefinitions>

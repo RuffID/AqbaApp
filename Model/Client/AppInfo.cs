@@ -1,13 +1,8 @@
-﻿using Newtonsoft.Json;
-
-namespace AqbaApp.Model.Client
+﻿namespace AqbaApp.Model.Client
 {
     public class AppInfo
     {
-        [JsonProperty]
-        public static string Version { get; set; }
-
-        [JsonProperty]
-        public static string Description { get; set; }
+        public string Version { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
     }
 }

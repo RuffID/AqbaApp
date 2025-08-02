@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AqbaApp.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace AqbaApp.View
 {
@@ -19,9 +9,10 @@ namespace AqbaApp.View
     /// </summary>
     public partial class AuthorizationWindow : Window
     {
-        public AuthorizationWindow()
+        public AuthorizationWindow(AuthorizationViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
             Owner = Application.Current.MainWindow;
         }
 

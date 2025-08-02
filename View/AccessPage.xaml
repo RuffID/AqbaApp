@@ -8,11 +8,8 @@
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Доступы"
-      x:Name="AccessPageElement">
-
-    <Page.DataContext>
-        <vm:AccessViewModel/>
-    </Page.DataContext>
+      x:Name="AccessPageElement"
+      d:DataContext="{d:DesignInstance Type=vm:AccessViewModel, IsDesignTimeCreatable=False}">
 
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
@@ -21,9 +18,8 @@
         </i:EventTrigger>
     </i:Interaction.Triggers>
 
-
     <Border BorderThickness="1" Margin="2" BorderBrush="#1D3D55">
-        <Grid Background="#E8EBE4">
+        <Grid Background="#E8EBE4" IsEnabled="{Binding GettingEntities}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="0.7*" MinWidth="100"/>
                 <ColumnDefinition Width="Auto"/>
@@ -40,24 +36,13 @@
                 <RowDefinition Height="0.08*"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <Button Grid.Column="0" Grid.Row="2" Content="Загрузить клиентов" Background="#1D3D55" VerticalAlignment="Stretch" Command="{Binding GetClients}" Style="{StaticResource EclipceButtonTheme}"/>
+            <Button Grid.Column="0" Grid.Row="2" Content="Загрузить клиентов" Background="#1D3D55" VerticalAlignment="Stretch" Command="{Binding GetCompaniesCommand}" Style="{StaticResource EclipceButtonTheme}" FontSize="16"/>
 
-            <TextBox x:Name="ClientSearch" Grid.Column="0" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="TextChanged">
-                        <i:InvokeCommandAction Command="{Binding ClientSearch}"
-                                   CommandParameter="{Binding ElementName=ClientSearch,Path=Text}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </TextBox>
-            <TextBox x:Name="ObjectSearch" Grid.Column="2" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="TextChanged">
-                        <i:InvokeCommandAction Command="{Binding ObjectSearch}"
-                                   CommandParameter="{Binding ElementName=ObjectSearch,Path=Text}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </TextBox>
+            <TextBox x:Name="ClientSearch" Grid.Column="0" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}"
+                 Text="{Binding CompanySearchText, UpdateSourceTrigger=PropertyChanged}" FontSize="16"/>
+
+            <TextBox x:Name="ObjectSearch" Grid.Column="2" Grid.Row="0" VerticalContentAlignment="Center" Height="35" HorizontalContentAlignment="Stretch" TextAlignment="Center" Style="{StaticResource EclipceTextBoxTheme}"
+                Text="{Binding MaintenanceEntitySearchText, UpdateSourceTrigger=PropertyChanged}"  FontSize="16"/>
 
             <Grid Grid.Column="0" Grid.Row="1" x:Name="CompanyList" Background="#FCFCFF">
                 <Grid.RowDefinitions>
@@ -67,10 +52,10 @@
 
                 <TextBlock Text="{Binding CompanyResults}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                <ListBox Grid.Row="1"  x:Name="ClientList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfCompanies}" Background="#FCFCFF" BorderThickness="0">
+                <ListBox Grid.Row="1"  x:Name="ClientList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredCompanies}" Background="#FCFCFF" BorderThickness="0">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction Command="{Binding SelectedClient}"
+                            <i:InvokeCommandAction Command="{Binding SelectCompanyCommand}"
                                    CommandParameter="{Binding ElementName=ClientList,Path=SelectedItem}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
@@ -78,13 +63,13 @@
                         <DataTemplate>
                             <TextBlock>
                             <Run FontSize="10" Foreground="{Binding Category.Color}" FontWeight="Bold">⚫ </Run>
-                            <Run Text="{Binding Name}"/>
+                            <Run FontSize="14" Text="{Binding Name}"/>
                             </TextBlock>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Обновить" Command="{Binding UpdateCompany}"/>
+                            <MenuItem Header="Обновить" Command="{Binding UpdateCompanyCommand}"/>
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
@@ -105,21 +90,21 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock Text="{Binding MaintenanceEntitiesResults}" FontSize="12" HorizontalAlignment="Center"  VerticalAlignment="Center"/>
-                <ListBox Grid.Row="1" x:Name="ObjectList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredListOfMaintenanceEntities}" Background="#FCFCFF" BorderThickness="0">
+                <ListBox Grid.Row="1" x:Name="ObjectList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding FilteredObjects}" Background="#FCFCFF" BorderThickness="0">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="SelectionChanged">
-                            <i:InvokeCommandAction Command="{Binding SelectedObject}"
+                            <i:InvokeCommandAction Command="{Binding SelectMaintenanceEntityCommand}"
                                    CommandParameter="{Binding ElementName=ObjectList,Path=SelectedItem}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Обновить" Command="{Binding UpdateMaintenanceEntity}"/>
+                            <MenuItem Header="Обновить" Command="{Binding UpdateMaintenanceEntityCommand}"/>
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Name}"/>
+                            <TextBlock Text="{Binding Name}" FontSize="14"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -128,28 +113,28 @@
             <ListBox Grid.Column="4" Grid.Row="1" x:Name="EquipmentList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding Equipments}" Background="#FCFCFF" BorderThickness="0">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="SelectionChanged">
-                        <i:InvokeCommandAction Command="{Binding SelectedEquipment}"
+                        <i:InvokeCommandAction Command="{Binding SelectEquipmentCommand}"
                                    CommandParameter="{Binding ElementName=EquipmentList,Path=SelectedItem}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
                 <ListBox.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Обновить" Command="{Binding UpdateEquipment}"/>
+                        <MenuItem Header="Обновить" Command="{Binding UpdateEquipmentCommand}"/>
                     </ContextMenu>
                 </ListBox.ContextMenu>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding FullName}"/>
+                        <TextBlock Text="{Binding FullName}" FontSize="14"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <ListBox Grid.Column="6" Grid.Row="1" x:Name="EquipmentParameter" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding CurrentEquipment.Parameters}" Background="#FCFCFF" BorderThickness="0">
+            <ListBox Grid.Column="6" Grid.Row="1" x:Name="EquipmentParameter" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ItemsSource="{Binding SelectedEquipment.Parameters}" Background="#FCFCFF" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Grid.Column="1" Margin="5">
-                            <TextBlock Text="{Binding Name}" HorizontalAlignment="Left"/>
-                            <TextBox Text="{Binding Value}" BorderThickness="0" 
+                            <TextBlock Text="{Binding Name}" FontSize="14" HorizontalAlignment="Left"/>
+                            <TextBox Text="{Binding Value}" FontSize="14" BorderThickness="0" 
                                  Background="Transparent"
                                  HorizontalContentAlignment="Stretch" 
                                  TextAlignment="Left"/>
@@ -163,7 +148,7 @@
                     <Image Source="Resources/Icons/anydesk_icon.png"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenAnydesk}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenAnydeskCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -171,7 +156,7 @@
                     <Image Source="Resources/Icons/iikoOffice_icon.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenIIKOOffice}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenIIKOOfficeCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -179,7 +164,7 @@
                     <Image Source="Resources/Icons/iikoChain_icon.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenIIKOChain}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenIIKOChainCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -187,7 +172,7 @@
                     <Image Source="Resources/Icons/ammyadmin.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenAmmyAdmin}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenAmmyAdminCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -195,7 +180,7 @@
                     <Image Source="Resources/Icons/assistant.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenAssistant}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenAssistantCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
@@ -203,7 +188,7 @@
                     <Image Source="Resources/Icons/rustdesk.ico"/>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <i:InvokeCommandAction Command="{Binding OpenRustDesk}"/>
+                            <i:InvokeCommandAction Command="{Binding OpenRustDeskCommand}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>

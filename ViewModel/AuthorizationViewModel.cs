@@ -1,25 +1,46 @@
-﻿using AqbaApp.Helper;
+﻿using AqbaApp.Core;
+using AqbaApp.Interfaces.Api;
+using AqbaApp.Model.Authorization;
+using AqbaApp.Model.Client;
+using AqbaApp.Service.Client;
 using AqbaApp.View;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace AqbaApp.ViewModel
 {
-    public class AuthorizationViewModel : ViewModelBase
+    public class AuthorizationViewModel : NotifyProperty
     {
-        public AuthorizationViewModel() { }
-
         #region [Variables]
 
-        private string login;
-        private string password;
-        private bool btnLoginActive = true;
-        private RelayCommand loginCommand;
+        private readonly ILogger<AuthorizationViewModel> _logger;
+        private readonly IRequestService _request;
+        private readonly Lazy<RelayCommand> _loginCommand;
+        private readonly SettingService<MainSettings> _settings;
+        private readonly string loginLink;
+        private string? login;
+        private string? password;
+        private bool btnLoginActive;
 
         #endregion
 
+        public AuthorizationViewModel(SettingService<MainSettings> settings, Immutable immutable, IRequestService request, ILoggerFactory logger) 
+        {
+            _logger = logger.CreateLogger<AuthorizationViewModel>();
+            _settings = settings;
+            _request = request;
+            _loginCommand = new Lazy<RelayCommand>(() => new RelayCommand(async o => await LoginMethod(o)));
+            loginLink = $"{_settings.Settings.ServerAddress}/{immutable.ApiLoginEndpoint}/login";
+            btnLoginActive = true;
+
+        }
+
         #region [Collections]        
 
-        public string Login
+        public string? Login
         {
             get => login;
             set
@@ -29,7 +50,7 @@ namespace AqbaApp.ViewModel
             }
         }
 
-        public string Password
+        public string? Password
         {
             get => password;
             set
@@ -53,30 +74,56 @@ namespace AqbaApp.ViewModel
 
         #region [Commands]
 
-        public RelayCommand LoginCommand
-        {
-            get
-            {
-                return loginCommand ??= new RelayCommand(async (o) =>
-                {
-                    LoginActive = false;
-                    if (string.IsNullOrEmpty(Login) || string.IsNullOrEmpty(Password))
-                    {
-                        View.MessageBox.Show("", "Поля логина и пароля не могут быть пустыми", MessageBoxButton.OK);
-                        LoginActive = true;
-                        return;
-                    }
+        public RelayCommand? LoginCommand => _loginCommand.Value;
 
-                    if (o != null && o is AuthorizationWindow window)
-                    {
-                        if (await Auth.LoginInService(Login, Password))
-                        {
-                            window.DialogResult = true;
-                            window.Close();
-                        }
-                    }
-                    LoginActive = true;
-                });
+        #endregion
+
+        #region [Methods]
+
+        private async Task LoginMethod(object? o)
+        {
+            if (o == null || o is not AuthorizationWindow window)
+                return;
+
+            LoginActive = false;
+
+            if (string.IsNullOrEmpty(Login) || string.IsNullOrEmpty(Password))
+            {
+                View.MessageBox.Show("Предупреждение", "Поле логина или пароля не может быть пустым.", MessageBoxButton.OK);
+                LoginActive = true;
+                return;
+            }
+
+            string? response = await _request.SendPost(loginLink + $"?login={Login}&password={Password}", null);
+
+            if (string.IsNullOrEmpty(response) || response.Contains("incorrect", StringComparison.CurrentCultureIgnoreCase))
+            {
+                _logger.LogWarning("Error sending login request. Possibly incorrect login or password.");    
+                View.MessageBox.Show("Предупреждение", "Ошибка при входе в систему. Возможно неправильный логин или пароль.", MessageBoxButton.OK);
+                _settings.Settings.Token = null;
+            }
+            else
+                _settings.Settings.Token = DeserializeToken(response);
+
+            if (!string.IsNullOrEmpty(_settings.Settings.Token?.AccessToken))
+            {
+                window.DialogResult = true;
+                window.Close();
+            }
+
+            LoginActive = true;
+        }
+
+        private AuthenticateResponse? DeserializeToken(string response)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<AuthenticateResponse>(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deserializing bearer token.");
+                return null;
             }
         }
 

@@ -10,11 +10,8 @@
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="700"
       d:Background="White"
-      x:Name="ReportPageElement">
-
-    <Page.DataContext>
-        <vm:ReportViewModel/>
-    </Page.DataContext>
+      x:Name="ReportPageElement"
+      d:DataContext="{d:DesignInstance Type=vm:ReportViewModel, IsDesignTimeCreatable=False}">
 
     <Page.Resources>
         <Style TargetType="TextBlock">
@@ -48,7 +45,7 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding FullName}" 
                                                Foreground="{Binding DataContext.FullNameBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}" 
-                                               FontSize="{Binding Path=FullNameFontSize, Source={x:Static namespace:Config.Settings}}">
+                                               FontSize="{Binding DataContext.FullNameFontSize, RelativeSource={RelativeSource AncestorType=ListView}}">
                                             <TextBlock.Background>
                                                 <SolidColorBrush Color="Transparent"/>
                                             </TextBlock.Background>
@@ -61,7 +58,7 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding SolvedIssues}"
                                                Foreground="{Binding DataContext.SolvedTasksBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                               FontSize="{Binding Path=SolvedTasksFontSize, Source={x:Static namespace:Config.Settings}}"/>
+                                               FontSize="{Binding DataContext.SolvedTasksFontSize, RelativeSource={RelativeSource AncestorType=ListView}}"/> 
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -70,7 +67,7 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding OpenTasks}" 
                                                Foreground="{Binding DataContext.OpenTasksBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                               FontSize="{Binding Path=OpenTasksFontSize, Source={x:Static namespace:Config.Settings}}"/>
+                                               FontSize="{Binding DataContext.OpenTasksFontSize, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -79,7 +76,7 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding SpentedTimeString}"
                                                Foreground="{Binding DataContext.SpendedTimeBackgroundColor, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                               FontSize="{Binding Path=SpendedTimeFontSize, Source={x:Static namespace:Config.Settings}}"/>
+                                               FontSize="{Binding DataContext.SpendedTimeFontSize, RelativeSource={RelativeSource AncestorType=ListView}}"/> 
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -97,13 +94,12 @@
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="30"/>
-                    <RowDefinition Height="30"/>
                     <RowDefinition Height="33"/>
                     <RowDefinition Height="33"/>
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="145"/>
+                    <ColumnDefinition Width="165"/>
                     <ColumnDefinition Width="148"/>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
@@ -195,7 +191,7 @@
                     </i:Interaction.Triggers>
                 </Button>
 
-                <ListBox Grid.Column="3" Grid.Row="1" ItemsSource="{Binding TaskTypes}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="0"  Background="Transparent" Margin="5">                    
+                <ListBox Grid.Column="3" Grid.Row="1" Grid.RowSpan="6" ItemsSource="{Binding TaskTypes}" IsEnabled="{Binding GettingTaskInRun}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="0"  Background="Transparent" Margin="5">                    
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
@@ -205,23 +201,23 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <Grid Grid.Column="2" Grid.Row="6">
-                    <CheckBox Content="Режим ЭО" FontSize="14" FontFamily="Roboto" IsChecked="{Binding Path=ElectronicQueueMode, Source={x:Static namespace:Config.Settings}}" VerticalAlignment="Center" IsEnabled="{Binding GettingTaskInRun}"/>
+                <Grid Grid.Column="0" Grid.Row="5">
+                    <CheckBox Content="Режим ЭО" FontSize="14" FontFamily="Roboto" IsChecked="{Binding ElectronicQueueMode}" VerticalAlignment="Center" IsEnabled="{Binding GettingTaskInRun}"/>
                 </Grid>
 
-                <Grid Grid.Column="2" Grid.Row="5">
+                <Grid Grid.Column="0" Grid.Row="4">
                     <CheckBox Content="Скрыть без решённых" FontSize="14" FontFamily="Roboto" IsChecked="{Binding Path=HideEmployeesWithoutSolvedIssues}" VerticalAlignment="Center" IsEnabled="{Binding GettingTaskInRun}"/>
                 </Grid>
 
-                <Grid Grid.Column="2" Grid.Row="4">
+                <Grid Grid.Column="0" Grid.Row="3">
                     <CheckBox Content="Скрыть без времени" FontSize="14" FontFamily="Roboto" IsChecked="{Binding Path=HideEmployeesWithoutWrittenOffTime}" VerticalAlignment="Center" IsEnabled="{Binding GettingTaskInRun}"/>
                 </Grid>
 
-                <Grid Grid.Column="2" Grid.Row="3">
+                <Grid Grid.Column="0" Grid.Row="2">
                     <CheckBox Content="Скрыть без текущих" FontSize="14" FontFamily="Roboto" IsChecked="{Binding Path=HideEmployeesWithoutOpenIssues}" VerticalAlignment="Center" IsEnabled="{Binding GettingTaskInRun}"/>
                 </Grid>
 
-                <Border Grid.Row="2" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
+                <!--<Border Grid.Row="2" BorderThickness="1" BorderBrush="CornflowerBlue" Margin="1">
                     <TextBlock Text="Цвет заголовков:" TextAlignment="Center" VerticalAlignment="Center" Margin="5"/>
                 </Border>
 
@@ -294,7 +290,7 @@
                         <TextBlock Text="{Binding SpendedTimeBackgroundColor}" TextAlignment="Center" Margin="5"/>
                     </Border>
                     <xctk:ColorPicker Grid.Column="3" BorderThickness="0" Width="20" SelectedColor="{Binding SpendedTimeBackgroundColor}"/>
-                </Grid>
+                </Grid>-->
 
                 <Button Content="Изменить фон" Grid.Column="2" Grid.Row="8" Click="SaveBackgroundPath_OnClick" Margin="0" Background="#1D3D55" Height="35" VerticalContentAlignment="Center" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}"/>
 
@@ -306,7 +302,7 @@
             <Button Command="{Binding GetOpenTasks}" IsEnabled="{Binding GettingTaskInRun}" Width="50" Height="50" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,65,5" Background="Transparent" BorderBrush="Transparent" Style="{StaticResource EclipceButtonTheme}">
                 <Image Source="Resources/Icons/refresh.png" Stretch="Uniform"/>
             </Button>
-            <TextBlock Text="{Binding LastUpdateTime}" Foreground="Black" FontSize="18"  VerticalAlignment="Bottom" HorizontalAlignment="Right"  Margin="0,0,15,55" />
+            <!--<TextBlock Text="{Binding LastUpdateTime}" Foreground="Black" FontSize="18"  VerticalAlignment="Bottom" HorizontalAlignment="Right"  Margin="0,0,15,55" />-->
             <ToggleButton x:Name="OpenCloseSlideMenuBtn" Height="40" Width="40" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,20,10">
                 <ToggleButton.Template>
                     <ControlTemplate>

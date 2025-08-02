@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using AqbaApp.Interfaces.Service;
+using System.Windows;
 
 namespace AqbaApp.View
 {
@@ -7,9 +8,12 @@ namespace AqbaApp.View
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(INavigationService navigationService)
         {
             InitializeComponent();
+
+            navigationService.SetMainFrame(MainFrame);
+            navigationService.NavigateToPage<ReportPage>();
         }
     }
 }

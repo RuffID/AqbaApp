@@ -2,21 +2,25 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
-    <Nullable>disable</Nullable>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>View\Resources\Icons\AB_favicon-04.ico</ApplicationIcon>
     <Platforms>AnyCPU;x86</Platforms>
 	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-	<Version>1.4</Version>
+	<Version>1.5</Version>
 	<Authors>(c) 118 / 75</Authors>
 	<Copyright>(с) 118 / 75</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Properties\PublishProfiles\**" />
     <Compile Remove="resorces\**" />
+    <EmbeddedResource Remove="Properties\PublishProfiles\**" />
     <EmbeddedResource Remove="resorces\**" />
+    <None Remove="Properties\PublishProfiles\**" />
     <None Remove="resorces\**" />
+    <Page Remove="Properties\PublishProfiles\**" />
     <Page Remove="resorces\**" />
   </ItemGroup>
 
@@ -30,6 +34,7 @@
     <None Remove="View\Resources\Icons\assistant.ico" />
     <None Remove="View\Resources\Icons\button_open.png" />
     <None Remove="View\Resources\Icons\Close.png" />
+    <None Remove="View\Resources\Icons\logout.png" />
     <None Remove="View\Resources\Icons\nr256.png" />
     <None Remove="View\Resources\Icons\nr512.png" />
     <None Remove="View\Resources\Icons\Open.png" />
@@ -47,14 +52,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Notifications.Wpf.Core" Version="1.4.1" />
-    <PackageReference Include="Serilog" Version="3.1.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,8 +72,10 @@
     <Resource Include="View\Resources\Icons\anydesk_icon.png" />
     <Resource Include="View\Resources\Icons\assistant.ico" />
     <Resource Include="View\Resources\Icons\Close.png" />
+    <Resource Include="View\Resources\Icons\login.png" />
     <Resource Include="View\Resources\Icons\iikoChain_icon.ico" />
     <Resource Include="View\Resources\Icons\iikoOffice_icon.ico" />
+    <Resource Include="View\Resources\Icons\logout.png" />
     <Resource Include="View\Resources\Icons\Open.png" />
     <Resource Include="View\Resources\Icons\password.png" />
     <Resource Include="View\Resources\Icons\refresh.png" />

@@ -9,12 +9,9 @@
       d:Background="White"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="SettingsPage"
-      x:Name="SettingsPageElement">
+      x:Name="SettingsPageElement"
+      d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel, IsDesignTimeCreatable=False}">
 
-
-    <Page.DataContext>
-        <vm:SettingsViewModel/>
-    </Page.DataContext>
 
     <Page.Resources>
         <Style TargetType="TabItem">

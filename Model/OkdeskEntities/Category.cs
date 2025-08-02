@@ -1,26 +1,13 @@
-﻿namespace AqbaApp.Model.OkdeskEntities
+﻿using AqbaApp.Core;
+using AqbaApp.Interfaces;
+
+namespace AqbaApp.Model.OkdeskEntities
 {
-    public class Category : ViewModelBase
+    public class Category : NotifyProperty, IEntity
     {
-        int id;
-        string color;
-        string name;
-        string code;
-
-        public int Id { get { return id; } set { id = value; OnPropertyChanged(nameof(Id)); } }
-        public string Name { get { return name; } set { name = value; OnPropertyChanged(nameof(Name)); } }
-        public string Code { get { return code; } set { code = value; OnPropertyChanged(nameof(Code)); } }
-
-        public string Color { get { return color; } set { color = value; OnPropertyChanged(nameof(Color)); } }
-
-        public Category() { }
-
-        public Category(int id, string color, string name, string code)
-        {
-            Id = id;
-            Color = color;
-            Name = name;
-            Code = code;
-        }
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
     }
 }

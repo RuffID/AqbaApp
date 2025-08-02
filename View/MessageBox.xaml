@@ -42,10 +42,9 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="{x:Type Button}">
                                 <Grid Background="{TemplateBinding Background}">
-                                    <ContentPresenter x:Name="MyContentPresenter" 
-                          Content="{TemplateBinding Content}"
-                          HorizontalAlignment="Center" 
-                          VerticalAlignment="Center" />
+                                    <ContentPresenter x:Name="MyContentPresenter" Content="{TemplateBinding Content}" 
+                                                      HorizontalAlignment="Center" 
+                                                      VerticalAlignment="Center" />
                                 </Grid>
                             </ControlTemplate>
                         </Setter.Value>

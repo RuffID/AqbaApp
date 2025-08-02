@@ -3,19 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:AqbaApp.ViewModel"
-      xmlns:notifications="clr-namespace:Notifications.Wpf.Core.Controls;assembly=Notifications.Wpf.Core"        
+        xmlns:vm="clr-namespace:AqbaApp.ViewModel"      
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         Title="AqbaApp" Height="800" MinHeight="450" Width="1300" MinWidth="500"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel, IsDesignTimeCreatable=False}"
         WindowStartupLocation="CenterScreen"        
         WindowState="{Binding CurWindowState}"
-        WindowStyle="{Binding CurWindowStyle}"        
-        >
-
-    <Window.DataContext>
-        <vm:MainViewModel/>
-    </Window.DataContext>
+        WindowStyle="{Binding CurWindowStyle}">
 
     <Window.InputBindings>
         <KeyBinding Key="F11" Command="{Binding ChangeWindowState}"/>
@@ -24,15 +19,6 @@
     <Window.Resources>        
         
     </Window.Resources>
-
-    <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Closing">
-            <i:InvokeCommandAction Command="{Binding ClosingWindow}"/>
-        </i:EventTrigger>
-        <i:EventTrigger EventName="Loaded">
-            <i:InvokeCommandAction Command="{Binding MainWindowLoaded}"/>
-        </i:EventTrigger>
-    </i:Interaction.Triggers>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -48,9 +34,10 @@
                     <RowDefinition Height="70"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="70"/>
+                    <RowDefinition Height="70"/>
                 </Grid.RowDefinitions>
                 
-                <Button Name="Login" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenLoginPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+                <Button Name="Login" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenAccessPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
                     <Image Source="Resources/Icons/password.png" Stretch="Uniform" Height="40" Width="40"/>
                 </Button>
 
@@ -58,14 +45,17 @@
                     <Image Source="Resources/Icons/report.png" Height="40" Width="40"/>
                 </Button>
 
-                <Button Name="Settings" Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenSettingsPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+                <Button Name="Exit" Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding ExitOrLoginInService}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
+                    <Image Source="{Binding LoginIcon}" Height="40" Width="40"/>
+                </Button>
+
+                <Button Name="Settings" Grid.Row="4" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding OpenSettingsPage}" Background="Transparent" Height="60" Width="70" Margin="2,10,2,10" Style="{StaticResource EclipceButtonTheme}">
                     <Image Source="Resources/Icons/settings.png" Height="40" Width="40"/>
                 </Button>
             </Grid>
         </Border>
 
-        <Frame Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden" Content="{Binding CurrentPage}"/>
-        <notifications:NotificationArea MaxItems="5" x:Name="NotificationWindowArea" Position="TopRight" Grid.Column="1"/>
+        <Frame Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>
     </Grid>
 
 </Window>

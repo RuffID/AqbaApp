@@ -2,131 +2,156 @@
 using System.Diagnostics;
 using System.Linq;
 using AqbaApp.Model.OkdeskEntities;
-using AqbaApp.API;
 using System;
 using System.Windows;
 using System.IO;
-using AqbaApp.Helper;
-using Notifications.Wpf.Core;
+using AqbaApp.Core;
+using AqbaApp.Model.Client;
+using Microsoft.Extensions.Logging;
+using AqbaApp.Service.OkdeskEntity;
+using AqbaApp.Service.Client;
+using AqbaApp.Core.Api;
+using System.Net.Http;
+using AqbaApp.Interfaces.Service;
+using System.ComponentModel;
+using System.Windows.Data;
+using System.Collections.Generic;
+using AqbaApp.Interfaces.Api;
 
 namespace AqbaApp.ViewModel
 {
-    public class AccessViewModel : ViewModelBase
+    public class AccessViewModel : NotifyProperty
     {
-        public AccessViewModel() 
-        {
-            Categories = [];
-            Companies = [];
-            Objects = [];
-            Equipments = [];
-            FilteredListOfCompanies = new ObservableCollection<Company>(Companies);
-            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects);
-            tempListOfCompanies = [];
-            tempListOfMaintenanceEntities = [];
-        }
-
         #region [ Variables ]
 
-        private static readonly char[] separator = ['/', '\\', ':'];
-        string searchCompanyString = "";
-        string searchMaintenanceEntitiesString = "";
-        string companyResult = "";
-        string maintenanceEntitiesResult = "";
-        string anydeskBtnVisibility = "Collapsed";
-        string iikoOfficeBtnVisibility = "Collapsed";
-        string iikoChainBtnVisibility = "Collapsed";
-        string ammyAdminBtnVisibility = "Collapsed";
-        string assistantBtnVisibility = "Collapsed";
-        string rustdeskBtnVisibility = "Collapsed";
-        ObservableCollection<Category> categories;
-        ObservableCollection<Company> companies;
-        ObservableCollection<Company> filteredListOfCompanies;
-        ObservableCollection<Company> tempListOfCompanies;
-        ObservableCollection<MaintenanceEntity> objects;
-        ObservableCollection<MaintenanceEntity> filteredListOfMaintenanceEntities;
-        ObservableCollection<MaintenanceEntity> tempListOfMaintenanceEntities;
-        ObservableCollection<Equipment> equipment;
-        Company currentCompany;
-        MaintenanceEntity currentMaintenanceEntity;
-        Equipment currentEquipment;
-        RelayCommand getClients;
-        RelayCommand selectedClient;
-        RelayCommand selectedObject;
-        RelayCommand selectedEquipment;
-        RelayCommand clientSearch;
-        RelayCommand objectSearch;
-        RelayCommand accessPageLoaded;
-        RelayCommand openAnydesk;
-        RelayCommand openRustDesk;
-        RelayCommand openOffice;
-        RelayCommand openChain;
-        RelayCommand openAmmyAdmin;
-        RelayCommand openAssistant;
-        RelayCommand updateEquipment;
-        RelayCommand updateCompany;
-        RelayCommand updateMaintenanceEntity;
+        private readonly SettingService<MainSettings> _mainSettings;
+        private readonly Immutable _immutable;
+        private readonly ILogger<AccessViewModel> _logger;
+        private readonly GetItemService _getItemService;
+        private readonly IRequestService _requestService;
+        private readonly EquipmentService _equipmentService;
+        private readonly CompanyCategoryService _categoryService;
+        private readonly CompanyService _companyService;
+        private readonly MaintenanceEntityService _maintenanceService;
+        private readonly HashSet<int> _filteredCompanyIds;
+        private readonly HashSet<int> _objectCompanyIds;
+
+        private readonly string baseApiLink;
+        private readonly char[] separator;
+        private string _clientSearchText;
+        private string _maintenanceEntitySearchText;
+        private string anydeskBtnVisibility;
+        private string iikoOfficeBtnVisibility;
+        private string iikoChainBtnVisibility;
+        private string ammyAdminBtnVisibility;
+        private string assistantBtnVisibility;
+        private string rustdeskBtnVisibility;
+        private bool gettingEntities;
+        private Company? _selectedCompany;
+        private MaintenanceEntity? _selectedMaintenanceEntity;
+        private Equipment? currentEquipment;
 
         #endregion
 
+        public AccessViewModel(SettingService<MainSettings> mainSettings, Immutable immutable, IHttpClientFactory client, INavigationService navigate, ILoggerFactory logger)
+        {
+            _mainSettings = mainSettings;
+            _immutable = immutable;
+            _getItemService = new(logger, client, navigate, mainSettings);
+            _requestService = new RequestClient(client.CreateClient(), logger);
+            _equipmentService = new(mainSettings, immutable, _getItemService);
+            _categoryService = new(mainSettings, immutable, _getItemService);
+            _companyService = new(mainSettings, immutable, _getItemService, _categoryService);
+            _maintenanceService = new(mainSettings, immutable, _getItemService);
+            _equipmentService = new(mainSettings, immutable, _getItemService);
+            _logger = logger.CreateLogger<AccessViewModel>();
+            Categories = [];
+            Companies = [];
+            MaintenanceEntities = [];
+            Equipments = [];
+            _filteredCompanyIds = [];
+            _objectCompanyIds = [];
+            FilteredCompanies = CollectionViewSource.GetDefaultView(Companies);
+            FilteredCompanies.Filter = FilterCompanies;            
+            FilteredObjects = CollectionViewSource.GetDefaultView(MaintenanceEntities);
+            FilteredObjects.Filter = FilterObjects;
+
+            baseApiLink = $"{_mainSettings.Settings.ServerAddress}/{_immutable.ApiMainEndpoint}";
+            separator = ['/', '\\', ':'];
+            _clientSearchText = string.Empty;
+            _maintenanceEntitySearchText = string.Empty;
+            anydeskBtnVisibility = "Collapsed";
+            iikoOfficeBtnVisibility = "Collapsed";
+            iikoChainBtnVisibility = "Collapsed";
+            ammyAdminBtnVisibility = "Collapsed";
+            assistantBtnVisibility = "Collapsed";
+            rustdeskBtnVisibility = "Collapsed";
+            gettingEntities = true;
+        }
+
         #region [ Collections ]
 
-        public ObservableCollection<Category> Categories 
-        { 
-          get { return categories; }
-          set { categories = value; OnPropertyChanged(nameof(Categories)); } 
-        }
+        public ObservableCollection<Category>? Categories { get; set; }
 
-        public ObservableCollection<Company> Companies
-        {
-            get { return companies; }
-            set { companies = value; OnPropertyChanged(nameof(Companies)); }
-        }
+        public ObservableCollection<Company>? Companies { get; set; }
 
-        public ObservableCollection<Company> FilteredListOfCompanies
-        {
-            get { return filteredListOfCompanies; }
-            set { filteredListOfCompanies = value; OnPropertyChanged(nameof(FilteredListOfCompanies)); }
-        }
+        public ICollectionView FilteredCompanies { get; }
+        
+        public ICollectionView FilteredObjects { get; }
 
-        public ObservableCollection<MaintenanceEntity> FilteredListOfMaintenanceEntities
+        public string CompanySearchText
         {
-            get { return filteredListOfMaintenanceEntities; }
-            set { filteredListOfMaintenanceEntities = value; OnPropertyChanged(nameof(FilteredListOfMaintenanceEntities)); }
-        }
-
-        public ObservableCollection<MaintenanceEntity> Objects
-        {
-            get { return objects; }
-            set { objects = value; OnPropertyChanged(nameof(Objects)); }
-        }
-
-        public ObservableCollection<Equipment> Equipments
-        {
-            get { return equipment; }
-            set { equipment = value; OnPropertyChanged(nameof(Equipments)); }
-        }
-
-        public Company CurrentCompany
-        {
-            get { return currentCompany; }
+            get => _clientSearchText;
             set
             {
-                currentCompany = value;
-                OnPropertyChanged(nameof(CurrentCompany));
+                if (_clientSearchText != value)
+                {
+                    _clientSearchText = value;
+                    OnPropertyChanged(nameof(CompanySearchText));
+                    RefreshFilters();              
+                }
             }
         }
 
-        public MaintenanceEntity CurrentMaintenanceEntity
+        public string MaintenanceEntitySearchText
         {
-            get { return currentMaintenanceEntity; }
+            get => _maintenanceEntitySearchText;
             set
             {
-                currentMaintenanceEntity = value;
-                OnPropertyChanged(nameof(CurrentMaintenanceEntity));
+                if (_maintenanceEntitySearchText != value)
+                {
+                    _maintenanceEntitySearchText = value;
+                    OnPropertyChanged(nameof(MaintenanceEntitySearchText));
+                    RefreshFilters();
+                }
+            }
+        }        
+
+        public ObservableCollection<MaintenanceEntity>? MaintenanceEntities { get; set; }
+
+        public ObservableCollection<Equipment>? Equipments { get; set; }
+
+        public Company? SelectedCompany
+        {
+            get { return _selectedCompany; }
+            set
+            {
+                _selectedCompany = value;
+                OnPropertyChanged(nameof(SelectedCompany));
             }
         }
 
-        public Equipment CurrentEquipment
+        public MaintenanceEntity? SelectedMaintenanceEntity
+        {
+            get { return _selectedMaintenanceEntity; }
+            set
+            {
+                _selectedMaintenanceEntity = value;
+                OnPropertyChanged(nameof(SelectedMaintenanceEntity));
+            }
+        }
+
+        public Equipment? SelectedEquipment
         {
             get { return currentEquipment; }
             set
@@ -140,30 +165,15 @@ namespace AqbaApp.ViewModel
                     AssistantBtnVisibility = "Collapsed";
                     RustDesktBtnVisibility = "Collapsed";
                 }
-                currentEquipment = value;
-                OnPropertyChanged(nameof(CurrentEquipment));
+                else
+                    currentEquipment = value;
+                OnPropertyChanged(nameof(SelectedEquipment));
             }
         }
 
-        public string CompanyResults
-        {
-            get { return companyResult; }
-            set
-            {
-                companyResult = value;
-                OnPropertyChanged("CompanyResults");
-            }
-        }
+        public string CompanyResults => $"Отображено: {FilteredCompanies.Cast<object>().Count()} из {Companies?.Count} компаний";
 
-        public string MaintenanceEntitiesResults
-        {
-            get { return maintenanceEntitiesResult; }
-            set
-            {
-                maintenanceEntitiesResult = value;
-                OnPropertyChanged("MaintenanceEntitiesResults");
-            }
-        }
+        public string MaintenanceEntitiesResults => $"Отображено: {FilteredObjects.Cast<object>().Count()} из {MaintenanceEntities?.Count} объектов";
 
         public string AnydeskBtnVisibility
         {
@@ -225,195 +235,65 @@ namespace AqbaApp.ViewModel
             }
         }
 
+        public bool GettingEntities
+        {
+            get { return gettingEntities; }
+            set
+            {
+                gettingEntities = value;
+                OnPropertyChanged(nameof(GettingEntities));
+            }
+        }
+
         #endregion
 
         #region [ Commands ]
-        public RelayCommand GetClients
+        public RelayCommand GetCompaniesCommand
         {
             get
             {
-                return getClients ??= new RelayCommand(async (o) =>
-                //TODO сделай сортировку клиентов по алфавиту
+                return new RelayCommand(async (o) =>
                     {
-                        if (!await Request.GetCategories(Categories))
+                        GettingEntities = false;
+
+                        var categories = await _categoryService.GetCategories();
+                        if (categories == null || categories.Count == 0)
+                        {
+                            GettingEntities = true;
                             return;
+                        }
 
-                        await Request.GetCompanies(Companies, Categories);
+                        Categories?.Clear();
+                        foreach (var category in categories)
+                            Categories?.Add(category);
 
-                        FilteredListOfCompanies = new ObservableCollection<Company>(Companies);
-                        tempListOfCompanies = [];
-                        CompanyResults = $"Загружено {Companies.Count} компаний";
 
-                        await Request.GetMaintenanceEntities(Objects);
+                        var companies = await _companyService.GetCompaniesFromCloudApi();
+                        if (companies == null || companies.Count == 0 || Companies == null)
+                        {
+                            GettingEntities = true;
+                            return;
+                        }
 
-                        FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects);
-                        tempListOfMaintenanceEntities = [];
-                        MaintenanceEntitiesResults = $"Загружено {Objects.Count} объектов";
+                        Companies.Clear();
+                        foreach (var company in companies)
+                            Companies.Add(company);
+
+                        var maintenances = await _maintenanceService.GetMaintenanceEntitiesFromCloudApi();
+                        if (maintenances == null || maintenances.Count == 0 || MaintenanceEntities == null)
+                        {
+                            GettingEntities = true;
+                            return;
+                        }
+
+                        MaintenanceEntities.Clear();
+                        foreach (var maintenance in maintenances)
+                            MaintenanceEntities.Add(maintenance);
+
+                        RefreshFilters();
+
+                        GettingEntities = true;
                     });
-            }
-        }
-
-        public RelayCommand SelectedClient
-        {
-            get
-            {
-                return selectedClient ??= new RelayCommand(async (selectedClient) =>
-                {
-
-                    if (selectedClient is Company currClient)
-                    {
-                        CurrentEquipment = null;
-                        CurrentMaintenanceEntity = null;
-                        CurrentCompany = currClient;
-
-                        FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(obj => obj.Company_Id == currClient.Id));
-
-                        //TODO сделать поиск объектов по companyId
-                        await Request.GetEquipmentsByCompany(Equipments, currClient.Id);
-                    }
-                });
-            }
-        }
-
-        public RelayCommand SelectedObject
-        {
-            get
-            {
-                return selectedObject ??= new RelayCommand(async (selectedObject) =>
-                {
-                    if (selectedObject is MaintenanceEntity currObject)
-                    {          
-                        CurrentEquipment = null;
-                        CurrentMaintenanceEntity = currObject;
-
-                        await Request.GetEquipmentsByMaintenanceEntity(Equipments, currObject.Id);                        
-                    }
-                });
-            }
-        }
-
-        public RelayCommand ClientSearch
-        {
-            get
-            {
-                return clientSearch ??= new RelayCommand((text) =>
-                {
-                    CompanyResults = "Найдено 0 из 0";
-                    if (Companies?.Count > 0)
-                    {
-                        searchCompanyString = text.ToString().Trim().ToLower();
-
-                        // Поиск и заполнение списка компаний по поисковой строке
-                        if (searchMaintenanceEntitiesString != "")
-                            FilteredListOfCompanies = new ObservableCollection<Company>(tempListOfCompanies.Where(comp => comp.Name.Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase)));
-                        else
-                            FilteredListOfCompanies = new ObservableCollection<Company>(Companies.Where(comp => comp.Name.Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase)));
-
-                        FilteredListOfMaintenanceEntities?.Clear();
-                        tempListOfMaintenanceEntities?.Clear();
-
-                        foreach (var item in FilteredListOfCompanies)
-                        {
-                            for (int i = 0; i < Objects.Count; i++)
-                            {
-                                if (item.Id == Objects[i].Company_Id)
-                                    if (Objects[i].Name.Trim().Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase))
-                                    {
-                                        FilteredListOfMaintenanceEntities.Add(Objects[i]);
-                                        tempListOfMaintenanceEntities.Add(Objects[i]);
-                                    }
-                            }
-                        }
-                        if (searchCompanyString == "" && searchMaintenanceEntitiesString == "")
-                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects);
-
-                        CompanyResults = $"Найдено {FilteredListOfCompanies.Count} из {Companies.Count}";
-                        MaintenanceEntitiesResults = $"Найдено {FilteredListOfMaintenanceEntities.Count} из {Objects.Count}";
-                    }
-                });
-            }
-        }
-
-        public RelayCommand ObjectSearch
-        {
-            get
-            {
-                return objectSearch ??= new RelayCommand((text) =>
-                {
-                    MaintenanceEntitiesResults = "Найдено 0 из 0";
-                    if (Objects?.Count > 0)
-                    {
-                        searchMaintenanceEntitiesString = text.ToString().Trim().ToLower();
-
-                        // Поиск и заполнение списка объектов по поисковой строке
-                        if (searchCompanyString != "")
-                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(tempListOfMaintenanceEntities.Where(cl => cl.Name.Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase)));
-                        else
-                            FilteredListOfMaintenanceEntities = new ObservableCollection<MaintenanceEntity>(Objects.Where(cl => cl.Name.Contains(searchMaintenanceEntitiesString, StringComparison.CurrentCultureIgnoreCase)));
-
-                        FilteredListOfCompanies.Clear();
-                        tempListOfCompanies.Clear();
-
-                        foreach (var item in FilteredListOfMaintenanceEntities)
-                        {
-                            for (int i = 0; i < Companies.Count; i++)
-                            {
-                                if (Companies[i].Id == item.Company_Id && !FilteredListOfCompanies.Contains(Companies[i]))
-                                    if (Companies[i].Name.Trim().Contains(searchCompanyString, StringComparison.CurrentCultureIgnoreCase))
-                                    {
-                                        FilteredListOfCompanies.Add(Companies[i]);
-                                        tempListOfCompanies.Add(Companies[i]);
-                                    }
-                            }
-                        }
-                        if (searchMaintenanceEntitiesString == "" && searchCompanyString == "")
-                            FilteredListOfCompanies = new ObservableCollection<Company>(Companies);
-
-                        MaintenanceEntitiesResults = $"Найдено {FilteredListOfMaintenanceEntities.Count} из {Objects.Count}";
-                        CompanyResults = $"Найдено {FilteredListOfCompanies.Count} из {Companies.Count}";
-                    }
-                });
-            }
-        }
-
-        public RelayCommand SelectedEquipment
-        {
-            get
-            {
-                return selectedEquipment ??= new RelayCommand((selectedEquipment) =>
-                {
-                    if (selectedEquipment is Equipment equipment)
-                    {
-                        CurrentEquipment = equipment;
-                        HideIcons();
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
-                            AnydeskBtnVisibility = "Visible";
-                        else AnydeskBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
-                        CurrentEquipment.Equipment_kind?.Code != "0010")
-                            IIKOOfficeBtnVisibility = "Visible";
-                        else IIKOOfficeBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
-                        CurrentEquipment.Equipment_kind?.Code == "0010")
-                            IIKOChainBtnVisibility = "Visible";
-                        else IIKOChainBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
-                            AmmyAdminBtnVisibility = "Visible";
-                        else AmmyAdminBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
-                            AssistantBtnVisibility = "Visible";
-                        else AssistantBtnVisibility = "Collapsed";
-
-                        if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "rustdesk") != null)
-                            RustDesktBtnVisibility = "Visible";
-                        else RustDesktBtnVisibility = "Collapsed";
-                    }
-                });
             }
         }
 
@@ -421,443 +301,538 @@ namespace AqbaApp.ViewModel
         {
             get
             {
-                return accessPageLoaded ??= new RelayCommand((o) =>
+                return new RelayCommand((o) =>
                 {
-                    //await IIKOUserMain.Login();
+
                 });
             }
         }
 
-        public RelayCommand OpenAnydesk
+        public RelayCommand SelectCompanyCommand
         {
             get
             {
-                return openAnydesk ??= new RelayCommand((o) =>
+                return new RelayCommand(async (selectedClient) =>
                 {
-                    if (CurrentEquipment == null) return;
 
-                    try
+                    if (selectedClient is Company currClient)
                     {
-                        string pathToAd = Config.Settings.PathToAnydesk;
-                        if (string.IsNullOrEmpty(pathToAd))
+                        SelectedEquipment = null;
+                        SelectedMaintenanceEntity = null;
+                        SelectedCompany = currClient;
+
+                        var equipments = await _equipmentService.GetEquipmentsByCompanyFromCloudApi(currClient.Id);
+                        if (equipments != null && equipments.Count != 0)
                         {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до AnyDesk.exe в настройках", MessageBoxButton.OK);
-                            return;
+                            Equipments?.Clear();
+                            foreach (var equipment in equipments)
+                                Equipments?.Add(equipment);
                         }
-
-                        if (!File.Exists(pathToAd))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удалось найти файл AnyDesk.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
-
-                        string anydeskFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AnyDesk")?.Value?.Replace(" ", "");
-                        string[] idAndPass = anydeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string id = string.Empty;
-                        string pass = string.Empty;
-
-                        if (idAndPass?.Length <= 0) return;
-
-                        if (idAndPass?[0] != null) id = idAndPass?[0];
-
-                        if (string.IsNullOrEmpty(id)) return;
-
-                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1]?.Replace("%", "%%")?.Replace("&", "^&");
-
-                        var startInfo = new ProcessStartInfo()
-                        {
-                            FileName = "cmd.exe",
-                            Arguments = $"/k echo {pass} | {"\"" + pathToAd + "\""} {id} --with-password && exit",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        Process.Start(startInfo);
                     }
-                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
                 });
             }
         }
 
-        public RelayCommand OpenAmmyAdmin
+        public RelayCommand SelectMaintenanceEntityCommand
         {
             get
             {
-                return openAmmyAdmin ??= new RelayCommand((o) =>
+                return new RelayCommand(async (selectedObject) =>
                 {
-                    if (CurrentEquipment == null) return;
-
-                    try
+                    if (selectedObject is MaintenanceEntity currObject)
                     {
-                        string pathToAA = Config.Settings.PathToAmmyAdmin;
-                        if (string.IsNullOrEmpty(pathToAA))
+                        SelectedEquipment = null;
+                        SelectedMaintenanceEntity = currObject;
+
+                        var equipments = await _equipmentService.GetEquipmentsByMaintenanceEntityFromCloudApi(currObject.Id);
+                        if (equipments != null && equipments.Count != 0)
                         {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до AA_3.exe в настройках", MessageBoxButton.OK);
-                            return;
+                            Equipments?.Clear();
+                            foreach (var equipment in equipments)
+                                Equipments?.Add(equipment);
                         }
-
-                        if (!File.Exists(pathToAA))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удалось найти файл AA_3.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
-
-                        string ammyadminFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AA")?.Value?.Replace(" ", "");
-                        string[] idAndPass = ammyadminFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string id = string.Empty;
-                        string pass = string.Empty;
-
-                        if (idAndPass?.Length <= 0) return;
-
-                        if (idAndPass?[0] != null) id = idAndPass?[0];
-
-                        if (string.IsNullOrEmpty(id)) return;
-
-                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
-
-                        var startInfo = new ProcessStartInfo()
-                        {
-                            FileName = "\"" + pathToAA + "\"",
-                            Arguments = $" -connect {id} -password {pass}",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        Process.Start(startInfo);
                     }
-                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
                 });
             }
         }
 
-        public RelayCommand OpenAssistant
+        public RelayCommand SelectEquipmentCommand
         {
             get
             {
-                return openAssistant ??= new RelayCommand((o) =>
+                return new RelayCommand((selectedEquipment) =>
                 {
-                    if (CurrentEquipment == null) return;
+                    if (selectedEquipment is not Equipment equipment)
+                        return;
 
-                    try
-                    {
-                        string pathToAd = Config.Settings.PathToAssistant;
-                        if (string.IsNullOrEmpty(pathToAd))
-                        {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до Assistant.exe в настройках", MessageBoxButton.OK);
-                            return;
-                        }
+                    SelectedEquipment = equipment;
+                    HideStartBtnIcons();
 
-                        if (!File.Exists(pathToAd))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удаётся найти файл Assistant.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
-
-                        string assistantFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "AC")?.Value?.Replace(" ", "");
-                        string[] idAndPass = assistantFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string id = string.Empty;
-                        string pass = string.Empty;
-
-                        if (idAndPass?.Length <= 0) return;
-
-                        if (idAndPass?[0] != null) id = idAndPass?[0];
-
-                        if (string.IsNullOrEmpty(id)) return;
-
-                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
-
-                        var startInfo = new ProcessStartInfo()
-                        {
-                            FileName = "\"" + pathToAd + "\"",
-                            Arguments = $" -CONNECT:{id}:{pass}",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        Process.Start(startInfo);
-                    }
-                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
+                    CheckStartIconsBtnVisibility();
                 });
             }
         }
 
-        public RelayCommand OpenRustDesk
+        private void StartExternalTool(string exeName, string exePath, string paramCode, string argumentTemplate, string errorTitle, string exeNameForMessageBox)
         {
-            get
+            if (SelectedEquipment == null) return;
+
+            if (!CheckProgramFiles(exePath, exeNameForMessageBox, errorTitle))
+                return;
+
+            try
             {
-                return openRustDesk ??= new RelayCommand((o) =>
-                {
-                    if (CurrentEquipment == null) return;
+                // Получает строку с доступом, например 123456789 / qwerty123
+                string? rawValue = SelectedEquipment.Parameters?.Find(p => p?.Code == paramCode)?.Value?.Replace(" ", "");
 
-                    try
-                    {
-                        string pathToAd = Config.Settings.PathToRustDesk;
-                        if (string.IsNullOrEmpty(pathToAd))
-                        {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до RustDesk.exe в настройках", MessageBoxButton.OK);
-                            return;
-                        }
+                // Разделяет строку на id и пароль с помощью символа разделителя ( /, \, : )
+                string[] idAndPass = rawValue?.Split(separator, StringSplitOptions.RemoveEmptyEntries) ?? [];
 
-                        if (!File.Exists(pathToAd))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удалось найти файл RustDesk.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
+                if (idAndPass.Length == 0 || string.IsNullOrEmpty(idAndPass[0])) return;
 
-                        string rustdeskFull = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "rustdesk")?.Value?.Replace(" ", "");
-                        string[] idAndPass = rustdeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string id = string.Empty;
-                        string pass = string.Empty;
+                string id = idAndPass[0];
+                string pass = idAndPass.Length > 1 ? idAndPass[1].Replace("%", "%%").Replace("&", "^&") : string.Empty;
 
-                        if (idAndPass?.Length <= 0) return;
+                string arguments = string.Format(argumentTemplate, pass, exePath, id);
 
-                        if (idAndPass?[0] != null) id = idAndPass?[0];
-
-                        if (string.IsNullOrEmpty(id)) return;
-
-                        if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
-
-                        var startInfo = new ProcessStartInfo()
-                        {
-                            FileName = "\"" + pathToAd + "\"",
-                            Arguments = $" --connect {id} --password {pass}",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        Process.Start(startInfo);
-                    }
-                    catch (Exception ex) { WriteLog.Error(ex.ToString()); }
-                });
+                ProcessStartInfo startInfo = new();
+                startInfo.FileName = exeName;
+                startInfo.Arguments = arguments;
+                startInfo.UseShellExecute = false;
+                startInfo.CreateNoWindow = true;
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while open {ErrorTitle}.", errorTitle);
             }
         }
 
-        public RelayCommand OpenIIKOOffice
+        public RelayCommand OpenAnydeskCommand => new(o =>
+            StartExternalTool(
+                exeName: "cmd.exe",
+                exePath: _mainSettings.Settings.PathToAnydesk,
+                paramCode: "AnyDesk",
+                argumentTemplate: "/k echo {0} | \"{1}\" {2} --with-password && exit",
+                errorTitle: "AnyDesk",
+                exeNameForMessageBox: "AnyDesk.exe"));
+
+        public RelayCommand OpenAmmyAdminCommand => new(o =>
+            StartExternalTool(
+                exeName: _mainSettings.Settings.PathToAmmyAdmin,
+                exePath: _mainSettings.Settings.PathToAmmyAdmin,
+                paramCode: "AA",
+                argumentTemplate: " -connect {2} -password {0}",
+                errorTitle: "Ammy admin",
+                exeNameForMessageBox: "AA_3.exe"));
+
+        public RelayCommand OpenAssistantCommand => new(o =>
+            StartExternalTool(
+                exeName: _mainSettings.Settings.PathToAssistant,
+                exePath: _mainSettings.Settings.PathToAssistant,
+                paramCode: "AC",
+                argumentTemplate: " -CONNECT:{2}:{0}",
+                errorTitle: "Ассистент РФ",
+                exeNameForMessageBox: "Assistant.exe"));
+
+        public RelayCommand OpenRustDeskCommand => new(o =>
+            StartExternalTool(
+                exeName: _mainSettings.Settings.PathToRustDesk,
+                exePath: _mainSettings.Settings.PathToRustDesk,
+                paramCode: "rustdesk",
+                argumentTemplate: " --connect {2} --password {0}",
+                errorTitle: "RustDesk",
+                exeNameForMessageBox: "RustDesk.exe"));
+
+        /*       public RelayCommand OpenAnydeskCommand
+               {
+                   get
+                   {
+                       return new RelayCommand((o) =>
+                       {
+                           if (SelectedEquipment == null) return;
+
+                           try
+                           {
+                               string pathToAd = _mainSettings.Settings.PathToAnydesk;
+                               if (string.IsNullOrEmpty(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Укажите путь до AnyDesk.exe в настройках.", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               if (!File.Exists(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Не удалось найти файл AnyDesk.exe, проверьте путь в настройках.", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               string? anydeskFull = SelectedEquipment.Parameters?.Find(equip => equip?.Code == "AnyDesk")?.Value.Replace(" ", "");
+                               string[]? idAndPass = anydeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                               string id = string.Empty;
+                               string pass = string.Empty;
+
+                               if (idAndPass?.Length <= 0) return;
+
+                               if (idAndPass?[0] != null) id = idAndPass[0];
+
+                               if (string.IsNullOrEmpty(id)) return;
+
+                               if (idAndPass?.Length > 1 && idAndPass[1] != null) pass = idAndPass[1].Replace("%", "%%").Replace("&", "^&");
+
+                               var startInfo = new ProcessStartInfo()
+                               {
+                                   FileName = "cmd.exe",
+                                   Arguments = $"/k echo {pass} | {"\"" + pathToAd + "\""} {id} --with-password && exit",
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true
+                               };
+                               Process.Start(startInfo);
+                           }
+                           catch (Exception ex)
+                           {
+                               _logger.LogError(ex, "Error while open anydesk.");
+                           }
+                       });
+                   }
+               }
+
+               public RelayCommand OpenAmmyAdminCommand
+               {
+                   get
+                   {
+                       return new RelayCommand((o) =>
+                       {
+                           if (SelectedEquipment == null) return;
+
+                           try
+                           {
+                               string pathToAA = _mainSettings.Settings.PathToAmmyAdmin;
+                               if (string.IsNullOrEmpty(pathToAA))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Укажите путь до AA_3.exe в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               if (!File.Exists(pathToAA))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Не удалось найти файл AA_3.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               string ammyadminFull = SelectedEquipment?.Parameters?.Find(equip => equip?.Code == "AA")?.Value?.Replace(" ", "");
+                               string[] idAndPass = ammyadminFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                               string id = string.Empty;
+                               string pass = string.Empty;
+
+                               if (idAndPass?.Length <= 0) return;
+
+                               if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                               if (string.IsNullOrEmpty(id)) return;
+
+                               if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                               var startInfo = new ProcessStartInfo()
+                               {
+                                   FileName = "\"" + pathToAA + "\"",
+                                   Arguments = $" -connect {id} -password {pass}",
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true
+                               };
+                               Process.Start(startInfo);
+                           }
+                           catch (Exception ex)
+                           {
+                               _logger.LogError(ex, "Error while open ammy admin.");
+                           }
+                       });
+                   }
+               }
+
+               public RelayCommand OpenAssistantCommand
+               {
+                   get
+                   {
+                       return new RelayCommand((o) =>
+                       {
+                           if (SelectedEquipment == null) return;
+
+                           try
+                           {
+                               string pathToAd = _mainSettings.Settings.PathToAssistant;
+                               if (string.IsNullOrEmpty(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Укажите путь до Assistant.exe в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               if (!File.Exists(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Не удаётся найти файл Assistant.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               string assistantFull = SelectedEquipment?.Parameters?.Find(equip => equip?.Code == "AC")?.Value?.Replace(" ", "");
+                               string[] idAndPass = assistantFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                               string id = string.Empty;
+                               string pass = string.Empty;
+
+                               if (idAndPass?.Length <= 0) return;
+
+                               if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                               if (string.IsNullOrEmpty(id)) return;
+
+                               if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                               var startInfo = new ProcessStartInfo()
+                               {
+                                   FileName = "\"" + pathToAd + "\"",
+                                   Arguments = $" -CONNECT:{id}:{pass}",
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true
+                               };
+                               Process.Start(startInfo);
+                           }
+                           catch (Exception ex)
+                           {
+                               _logger.LogError(ex, "Error while open assistant rf.");
+                           }
+                       });
+                   }
+               }
+
+               public RelayCommand OpenRustDeskCommand
+               {
+                   get
+                   {
+                       return new RelayCommand((o) =>
+                       {
+                           if (SelectedEquipment == null) return;
+
+                           try
+                           {
+                               string pathToAd = _mainSettings.Settings.PathToRustDesk;
+                               if (string.IsNullOrEmpty(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Укажите путь до RustDesk.exe в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               if (!File.Exists(pathToAd))
+                               {
+                                   View.MessageBox.Show("Ошибка", "Не удалось найти файл RustDesk.exe, проверьте путь в настройках", MessageBoxButton.OK);
+                                   return;
+                               }
+
+                               string rustdeskFull = SelectedEquipment?.Parameters?.Find(equip => equip?.Code == "rustdesk")?.Value?.Replace(" ", "");
+                               string[] idAndPass = rustdeskFull?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                               string id = string.Empty;
+                               string pass = string.Empty;
+
+                               if (idAndPass?.Length <= 0) return;
+
+                               if (idAndPass?[0] != null) id = idAndPass?[0];
+
+                               if (string.IsNullOrEmpty(id)) return;
+
+                               if (idAndPass?.Length > 1 && idAndPass?[1] != null) pass = idAndPass?[1];
+
+                               var startInfo = new ProcessStartInfo()
+                               {
+                                   FileName = "\"" + pathToAd + "\"",
+                                   Arguments = $" --connect {id} --password {pass}",
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true
+                               };
+                               Process.Start(startInfo);
+                           }
+                           catch (Exception ex)
+                           {
+                               _logger.LogError(ex, "Error while open RustDesk.");
+                           }
+                       });
+                   }
+               }*/
+
+        public RelayCommand OpenIIKOOfficeCommand
         {
             get
             {
-                return openOffice ??= new RelayCommand((o) =>
+                return new RelayCommand((o) =>
                 {
-                    if (CurrentEquipment == null) return;
+                    if (SelectedEquipment == null) return;
 
                     try
                     {
-                        string pathToCLEARbat = Config.Settings.PathToCLEARbat;
-                        if (string.IsNullOrEmpty(pathToCLEARbat))
-                        {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до CLEAR.bat.exe в настройках", MessageBoxButton.OK);
+                        string pathToCLEARbat = _mainSettings.Settings.PathToCLEARbat;
+                        if (!CheckProgramFiles(pathToCLEARbat, "CLEAR.bat.exe", "CLEAR.bat.exe"))
                             return;
-                        }    
 
-                        if (!File.Exists(pathToCLEARbat))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удалось найти файл CLEAR.bat.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
+                        string[] addressAndPort = [];
+                        string[] loginAndPassword = [];
 
-                        string serverInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "srv_addr")?.Value?.Replace(" ", "");
-                        string loginInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "0008")?.Value?.Replace(" ", "");
-                        string[] addressAndPort = serverInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string[] loginAndPassword = loginInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        string? serverInfo = SelectedEquipment.Parameters.Find(equip => equip.Code == "srv_addr")?.Value.Replace(" ", "");
+                        string? loginInfo = SelectedEquipment.Parameters.Find(equip => equip.Code == "0008")?.Value.Replace(" ", "");
+                        
+                        if (!string.IsNullOrWhiteSpace(serverInfo))
+                            addressAndPort = serverInfo.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (!string.IsNullOrEmpty(loginInfo))
+                            loginAndPassword = loginInfo.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
                         StartIIKO(pathToCLEARbat, loginAndPassword, addressAndPort);
 
                     }
-                    catch (Exception e) { WriteLog.Error(e.ToString()); }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error while open iiko.");
+                    }
                 });
             }
         }
 
-        public RelayCommand OpenIIKOChain
+        public RelayCommand OpenIIKOChainCommand
         {
             get
             {
-                return openChain ??= new RelayCommand((o) =>
+                return new RelayCommand((o) =>
                 {
-                    if (CurrentEquipment == null) return;
+                    if (SelectedEquipment == null) return;
 
                     try
                     {
-                        string pathToCLEARbat = Config.Settings.PathToCLEARbat;
-                        if (string.IsNullOrEmpty(pathToCLEARbat))
-                        {
-                            View.MessageBox.Show("Ошибка", "Укажите путь до CLEAR.bat.exe в настройках", MessageBoxButton.OK);
+                        string pathToCLEARbat = _mainSettings.Settings.PathToCLEARbat;
+                        if (!CheckProgramFiles(pathToCLEARbat, "CLEAR.bat.exe", "CLEAR.bat.exe"))
                             return;
-                        }
 
-                        if (!File.Exists(pathToCLEARbat))
-                        {
-                            View.MessageBox.Show("Ошибка", "Не удалось найти файл CLEAR.bat.exe, проверьте путь в настройках", MessageBoxButton.OK);
-                            return;
-                        }
+                        string[] addressAndPort = [];
+                        string[] loginAndPassword = [];
+                        string? serverInfo;
 
-                        string serverInfo = CurrentEquipment?.Parameters?.Find(equip => equip?.Code == "srv_addr")?.Value?.Replace(" ", ""); // 0017 код атрибута iikoChain
-                        string loginInfo = CurrentEquipment?.Parameters?.Find(equip => equip.Code == "0008")?.Value?.Replace(" ", "");
-                        string[] addressAndPort = serverInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
-                        string[] loginAndPassword = loginInfo?.Split(separator, System.StringSplitOptions.RemoveEmptyEntries);
+                        // Если открыт сервер RMS, в котором указан адрес чейна, то искать через код 0017
+                        serverInfo = SelectedEquipment.Parameters.Find(equip => equip.Code == "0017")?.Value.Replace(" ", "");
+
+                        // Если открыт чейн, то получать адрес через srv_addr
+                        if (string.IsNullOrEmpty(serverInfo))
+                            serverInfo = SelectedEquipment.Parameters.Find(equip => equip.Code == "srv_addr")?.Value.Replace(" ", "");
+
+                        string? loginInfo = SelectedEquipment.Parameters.Find(equip => equip.Code == "0008")?.Value.Replace(" ", "");
+
+                        if (!string.IsNullOrWhiteSpace(serverInfo))
+                            addressAndPort = serverInfo.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (!string.IsNullOrEmpty(loginInfo))
+                            loginAndPassword = loginInfo.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
                         StartIIKO(pathToCLEARbat, loginAndPassword, addressAndPort);
                     }
-                    catch (Exception e) { WriteLog.Error(e.ToString()); }
-                });
-            }
-        }
-
-        public RelayCommand UpdateCompany
-        {
-            get
-            {
-                return updateCompany ??= new RelayCommand(async (o) =>
-                {
-                    if (CurrentCompany == null) return;
-
-                    var info = await Request.GetUpdateInformationForCompany(CurrentCompany.Id);
-
-                    if (info == null)
+                    catch (Exception ex)
                     {
-                        _ = Notice.Show(NotificationType.Information, "Данные по компании не удалось обновить, подробнее в логах", 3);
-                        return;
-                    }
-
-                    CurrentCompany = info.Company;
-
-                    var comp = Companies.Where(e => e.Id == CurrentCompany.Id).FirstOrDefault();
-
-                    if (comp != null)
-                    {
-                        int index = Companies.IndexOf(comp);
-                        if (index >= 0)
-                            Companies[index].Replace(CurrentCompany);
-                    }
-
-                    _ = Notice.Show(NotificationType.Success, "Данные по компании успешно обновлены", 3);
-
-                    if (info.MaintenanceEntity != null && info.MaintenanceEntity.Count > 0)
-                    {
-                        foreach (var me in info.MaintenanceEntity)
-                        {
-                            var maintenance = Objects.Where(e => e.Id == me.Id).FirstOrDefault();
-
-                            if (maintenance != null)
-                            {
-                                int index = Objects.IndexOf(maintenance);
-                                if (index >= 0)
-                                    Objects[index].Replace(maintenance);
-                            } // Иначе если объекта не было в списке, значит его добавили и нужно добавить этот объект в список
-                            else Objects.Add(me);
-                        }
-                    }
-
-                    if (info.Equipments == null || info.Equipments.Count <= 0) return;
-
-                    CurrentEquipment = null;
-
-                    foreach (var equip in info.Equipments)
-                    {
-                        var equipId = Equipments.Where(e => e.Id == equip.Id).FirstOrDefault();
-
-                        int index = Equipments.IndexOf(equipId);
-                        if (index >= 0)
-                            Equipments[index]= equip;
+                        _logger.LogError(ex, "Error while open iikoChain.");
                     }
                 });
             }
         }
 
-        public RelayCommand UpdateMaintenanceEntity
+        private void StartIIKO(string pathToCLEARbat, string[] loginInfo, string[] serverInfo)
+        {
+            string address = string.Empty;
+            string port = "443";
+            string login = string.Empty;
+            string password = string.Empty;
+
+            if (serverInfo.Length == 0) return;
+
+            if (serverInfo[0] != null) address = serverInfo[0];
+
+            if (serverInfo.Length > 1 && serverInfo[1] != null) port = serverInfo[1];
+
+            if (loginInfo != null && loginInfo.Length >= 0 && loginInfo[0] != null) login = loginInfo[0];
+
+            if (loginInfo != null && loginInfo.Length > 1 && loginInfo[1] != null) password = loginInfo[1];
+
+            if (string.IsNullOrEmpty(address)) return;
+
+            Process.Start("\"" + pathToCLEARbat + "\"", $"iiko@{address}:{port}@{login}:{password}");
+        }
+
+        public RelayCommand UpdateCompanyCommand
         {
             get
             {
-                return updateMaintenanceEntity ??= new RelayCommand(async (o) =>
+                return new RelayCommand(async (o) =>
                 {
-                    if (CurrentMaintenanceEntity == null) return;
+                    if (SelectedCompany == null) return;
 
-                    var info = await Request.GetUpdateInformationForMaintenanceEntity(CurrentMaintenanceEntity.Id);
+                    // Отправка запрос в окдеск на сервер
+                    await _requestService.SendPut(baseApiLink + $"/company/update_company_from_cloud_api?companyId={SelectedCompany.Id}", null, _mainSettings.Settings.Token?.AccessToken);
 
-                    if (info == null)
-                    {
-                        _ = Notice.Show(NotificationType.Information, "Данные по объекту обслуживания не удалось обновить, подробнее в логах", 3);
-                        return;
-                    }
+                    // Получение обновлённой компании с сервера
+                    SelectedCompany = await _getItemService.GetItem<Company>(baseApiLink + $"/company?id={SelectedCompany.Id}");
 
-                    CurrentMaintenanceEntity = info.MaintenanceEntity.ElementAt(0);
+                    if (SelectedCompany == null || Companies == null) return;
 
-                    var me = Objects.Where(e => e.Id == CurrentMaintenanceEntity.Id).FirstOrDefault();
+                    Company? companyFromList = Companies.Where(e => e.Id == SelectedCompany.Id).FirstOrDefault();
 
-                    if (me != null)
-                    {
-                        int index = Objects.IndexOf(me);
-                        if (index >= 0)
-                            Objects[index].Replace(CurrentMaintenanceEntity);
-                    }
+                    if (companyFromList == null) return;
 
-                    _ = Notice.Show(NotificationType.Success, "Данные по объекту обслуживания успешно обновлены", 3);
-
-                    if (info.Equipments == null || info.Equipments.Count <= 0) return;
-
-                    CurrentEquipment = null;
-
-                    foreach (var equip in info.Equipments)
-                    {
-                        var equipId = Equipments.Where(e => e.Id == equip.Id).FirstOrDefault();
-
-                        int index = Equipments.IndexOf(equipId);
-                        if (index >= 0)
-                            Equipments[index] = equip;
-                    }
+                    companyFromList.Replace(SelectedCompany);
                 });
             }
         }
 
-        public RelayCommand UpdateEquipment
+        public RelayCommand UpdateMaintenanceEntityCommand
         {
             get
             {
-                return updateEquipment ??= new RelayCommand( async (o) =>
+                return new RelayCommand(async (o) =>
                 {
-                    if (CurrentEquipment == null) return;
+                    if (SelectedMaintenanceEntity == null) return;
 
-                    HideIcons();
-                    Equipment updatedEquipment = await Request.GetEquipment(CurrentEquipment.Id);
+                    // Отправка запрос в окдеск на сервер
+                    await _requestService.SendPut(baseApiLink + $"/maintenanceEntity/update_maintenance_entity_from_cloud_api?maintenanceEntityId={SelectedMaintenanceEntity.Id}", null, _mainSettings.Settings.Token?.AccessToken);
 
-                    if (updatedEquipment == null)
-                    {
-                        _ = Notice.Show(NotificationType.Success, "Данные по оборудованию не удалось обновить, подробнее в логах", 3);
-                        return;
-                    }
+                    // Получение обновлённого объекта с сервера
+                    SelectedMaintenanceEntity = await _getItemService.GetItem<MaintenanceEntity>(baseApiLink + $"/maintenanceEntity?id={SelectedMaintenanceEntity.Id}");
 
-                    CurrentEquipment = updatedEquipment;
-                    var equip = Equipments.Where(e => e.Id == updatedEquipment.Id).FirstOrDefault();
-                    if (equip != null)
-                    {
-                        int index = Equipments.IndexOf(equip);
-                        if (index >= 0)
-                            Equipments[index].Replace(updatedEquipment);
-                    }
+                    if (SelectedMaintenanceEntity == null || MaintenanceEntities == null) return;
 
+                    MaintenanceEntity? maintenanceEntityFromList = MaintenanceEntities.Where(e => e.Id == SelectedMaintenanceEntity.Id).FirstOrDefault();
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
-                        AnydeskBtnVisibility = "Visible";
-                    else AnydeskBtnVisibility = "Collapsed";
+                    if (maintenanceEntityFromList == null) return;
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
-                    CurrentEquipment.Equipment_kind?.Code != "0010")
-                        IIKOOfficeBtnVisibility = "Visible";
-                    else IIKOOfficeBtnVisibility = "Collapsed";
+                    maintenanceEntityFromList.Replace(SelectedMaintenanceEntity);
+                });
+            }
+        }
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
-                    CurrentEquipment.Equipment_kind?.Code == "0010")
-                        IIKOChainBtnVisibility = "Visible";
-                    else IIKOChainBtnVisibility = "Collapsed";
+        public RelayCommand UpdateEquipmentCommand
+        {
+            get
+            {
+                return new RelayCommand(async (o) =>
+                {
+                    if (SelectedEquipment == null) return;
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
-                        AmmyAdminBtnVisibility = "Visible";
-                    else AmmyAdminBtnVisibility = "Collapsed";
+                    HideStartBtnIcons();
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
-                        AssistantBtnVisibility = "Visible";
-                    else AssistantBtnVisibility = "Collapsed";
+                    // Отправка запрос в окдеск на сервер
+                    await _requestService.SendPut(baseApiLink + $"/equipment?equipmentId={SelectedEquipment.Id}", null, _mainSettings.Settings.Token?.AccessToken);
 
-                    if (CurrentEquipment.Parameters?.Find(equip => equip.Code == "rustdesk") != null)
-                        RustDesktBtnVisibility = "Visible";
-                    else RustDesktBtnVisibility = "Collapsed";
+                    // Получение обновлённого оборудования с сервера
+                    SelectedEquipment = await _getItemService.GetItem<Equipment>(baseApiLink + $"/equipment?id={SelectedEquipment.Id}");
 
-                    _ = Notice.Show(NotificationType.Success, "Данные по оборудованию успешно обновлены", 3);
+                    if (SelectedEquipment == null || Equipments == null) return;
 
+                    Equipment? equipmentFromList = Equipments.Where(e => e.Id == SelectedEquipment.Id).FirstOrDefault();
+
+                    if (equipmentFromList == null) return;
+
+                    equipmentFromList.Replace(SelectedEquipment);
+
+                    CheckStartIconsBtnVisibility();
                 });
             }
         }
@@ -865,29 +840,74 @@ namespace AqbaApp.ViewModel
 
         #region [Methods]
 
-        static void StartIIKO(string pathToCLEARbat, string[] loginInfo, string[] serverInfo)
+        private void RefreshFilters()
         {
-            string address = string.Empty;
-            string port = "443";
-            string login = string.Empty;
-            string password = string.Empty;
+            FilteredCompanies.Refresh();
+            UpdateFilteredCompanyIds();
+            FilteredObjects.Refresh();
+            UpdateObjectCompanyIds();
 
-            if (serverInfo.Length <= 0) return;
-
-            if (serverInfo[0] != null) address = serverInfo?[0];
-
-            if (serverInfo?.Length > 1 && serverInfo?[1] != null) port = serverInfo[1];
-
-            if (loginInfo?.Length >= 0 && loginInfo?[0] != null) login = loginInfo?[0];
-
-            if (loginInfo?.Length > 1 && loginInfo?[1] != null) password = loginInfo?[1];
-
-            if (string.IsNullOrEmpty(address)) return;
-
-            Process.Start("\"" + pathToCLEARbat + "\"", $"iiko@{address}:{port}@{login}:{password}");
+            OnPropertyChanged(nameof(CompanyResults));
+            OnPropertyChanged(nameof(MaintenanceEntitiesResults));
         }
 
-        void HideIcons()
+        private bool FilterCompanies(object obj)
+        {
+            if (obj is not Company company) return false;
+
+            bool nameMatch = string.IsNullOrWhiteSpace(CompanySearchText)
+                || company.Name.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase);
+
+            bool relatedToFilteredObjects = string.IsNullOrWhiteSpace(MaintenanceEntitySearchText)
+                || _objectCompanyIds.Contains(company.Id);
+
+            return nameMatch && relatedToFilteredObjects;
+        }
+
+        private bool FilterObjects(object obj)
+        {
+            if (obj is not MaintenanceEntity entity) return false;
+
+            // 1. Если нет поисковых строк — показываем вообще всё
+            if (string.IsNullOrWhiteSpace(CompanySearchText) && string.IsNullOrWhiteSpace(MaintenanceEntitySearchText))
+                return true;
+
+            // 2. Если объект не привязан к компании — игнорим его (не отображаем), когда поисковая строка клиента не пустая
+            if (entity?.CompanyId == null || !_filteredCompanyIds.Contains(entity.CompanyId))
+                return false;
+
+            // 3. Вывод только тех объектов, у которых CompanyId компаний, которые уже отфильтрованы
+            bool companyMatch = _filteredCompanyIds.Contains(entity.CompanyId);
+
+            // 4. Поиск объектов обслуживания, в имени которых содержится поисковая строка
+            bool nameMatch = string.IsNullOrWhiteSpace(MaintenanceEntitySearchText)
+                || entity.Name.Contains(MaintenanceEntitySearchText, StringComparison.OrdinalIgnoreCase);
+
+            return companyMatch && nameMatch;
+        }
+
+        private void UpdateFilteredCompanyIds()
+        {
+            _filteredCompanyIds.Clear();
+
+            foreach (Company company in FilteredCompanies)
+                _filteredCompanyIds.Add(company.Id);
+        }
+
+        private void UpdateObjectCompanyIds()
+        {
+            _objectCompanyIds.Clear();
+
+            foreach (MaintenanceEntity entity in FilteredObjects)
+            {
+                if (!_objectCompanyIds.Contains(entity.CompanyId))
+                    _objectCompanyIds.Add(entity.CompanyId);
+            }
+        }
+
+
+
+        private void HideStartBtnIcons()
         {
             AnydeskBtnVisibility = "Collapsed";
             IIKOOfficeBtnVisibility = "Collapsed";
@@ -895,6 +915,54 @@ namespace AqbaApp.ViewModel
             AmmyAdminBtnVisibility = "Collapsed";
             AssistantBtnVisibility = "Collapsed";
             RustDesktBtnVisibility = "Collapsed";
+        }
+
+        private void CheckStartIconsBtnVisibility()
+        {
+            if (SelectedEquipment == null) return;
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "AnyDesk") != null)
+                AnydeskBtnVisibility = "Visible";
+            else AnydeskBtnVisibility = "Collapsed";
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "srv_addr") != null &&
+            SelectedEquipment.Kind?.Code != "0010")
+                IIKOOfficeBtnVisibility = "Visible";
+            else IIKOOfficeBtnVisibility = "Collapsed";
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "0017") != null ||
+            SelectedEquipment.Kind?.Code == "0010")
+                IIKOChainBtnVisibility = "Visible";
+            else IIKOChainBtnVisibility = "Collapsed";
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "AA") != null)
+                AmmyAdminBtnVisibility = "Visible";
+            else AmmyAdminBtnVisibility = "Collapsed";
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "AC") != null)
+                AssistantBtnVisibility = "Visible";
+            else AssistantBtnVisibility = "Collapsed";
+
+            if (SelectedEquipment.Parameters?.Find(equip => equip.Code == "rustdesk") != null)
+                RustDesktBtnVisibility = "Visible";
+            else RustDesktBtnVisibility = "Collapsed";
+        }
+
+        private bool CheckProgramFiles(string pathToFile, string exeNameForMessageBox, string titleName = "Ошибка")
+        {
+            if (string.IsNullOrEmpty(pathToFile))
+            {
+                View.MessageBox.Show(titleName, $"Укажите путь до {exeNameForMessageBox} в настройках", MessageBoxButton.OK);
+                return false;
+            }
+
+            if (!File.Exists(pathToFile))
+            {
+                View.MessageBox.Show(titleName, $"Не удалось найти файл {exeNameForMessageBox}, проверьте путь в настройках", MessageBoxButton.OK);
+                return false;
+            }
+
+            return true;
         }
 
         #endregion

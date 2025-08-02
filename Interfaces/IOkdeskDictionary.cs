@@ -2,9 +2,9 @@
 {
     public interface IOkdeskDictionary
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public bool IsChecked { get; set; }
+        long Id { get; set; }
+        string Name { get; set; }
+        bool IsChecked { get; set; }
 
         void Update(IOkdeskDictionary item);
         void UpdateWithoutChecked(IOkdeskDictionary item);
